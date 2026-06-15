@@ -14,6 +14,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         
+      - name: Buat Keystore Sementara
+        run: keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Debug"
+        
       - name: Build APK
         run: ./gradlew assembleDebug --stacktrace
         
