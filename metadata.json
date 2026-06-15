@@ -1,0 +1,6 @@
+{
+  "name": "Ricky Sales Tracker",
+  "description": "Personal Sales Growth Operating System for retail salesperson",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
