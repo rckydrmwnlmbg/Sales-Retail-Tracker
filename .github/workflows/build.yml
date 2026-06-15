@@ -8,9 +8,9 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'
       - run: chmod +x gradlew
-      - run: ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx3g"
+      - run: ./gradlew clean assembleDebug --no-daemon --no-parallel
       - uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
