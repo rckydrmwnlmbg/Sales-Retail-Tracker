@@ -20,11 +20,13 @@ jobs:
       - name: Buat Keystore Sementara
         run: keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Debug"
         
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper
+        
       - name: Build APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: chmod +x gradlew && ./gradlew assembleDebug --stacktrace
         
       - uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/
-          
