@@ -87,7 +87,10 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
     val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
     val activeHour = if (isClockedIn && clockInHour != null) clockInHour!! else currentHour
     val shiftName = if (activeHour < 13) "Shift Pagi" else "Shift Siang"
-    val shiftTime = if (activeHour < 13) "07.30 - 17.00" else "14.00 - 22.00"
+    
+    val shiftPagiTimeStr by viewModel.shiftPagiTime.collectAsState()
+    val shiftSiangTimeStr by viewModel.shiftSiangTime.collectAsState()
+    val shiftTime = if (activeHour < 13) shiftPagiTimeStr else shiftSiangTimeStr
 
     val headerContent = remember(isClockedIn, shiftName, shiftTime) {
         object : CollapsibleHeaderContent {

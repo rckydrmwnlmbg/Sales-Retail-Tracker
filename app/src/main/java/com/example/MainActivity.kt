@@ -58,8 +58,9 @@ class MainActivity : ComponentActivity() {
     setContent {
         val context = LocalContext.current
         val app = context.applicationContext as MyApplication
+        val prefs = context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
         val mainViewModel: MainViewModel = viewModel(
-            factory = MainViewModelFactory(app.repository)
+            factory = MainViewModelFactory(app.repository, prefs)
         )
         val themeMode by mainViewModel.themeMode.collectAsState(initial = 0)
 

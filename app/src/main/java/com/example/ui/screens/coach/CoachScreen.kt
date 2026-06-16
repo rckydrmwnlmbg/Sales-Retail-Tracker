@@ -35,22 +35,25 @@ private val ElectricMagenta = Color(0xFFD500F9)
 fun CoachScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
-    var recommendations by remember { mutableStateOf<CoachRecommendations?>(null) }
+    val recommendations by viewModel.coachRecommendations.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
     val activities by viewModel.allActivities.collectAsState()
     val goal by viewModel.currentGoal.collectAsState()
     val personalRevenue by viewModel.personalRevenue.collectAsState()
+    val userApiKey by viewModel.openRouterApiKey.collectAsState()
     
     val generateInsights: () -> Unit = {
         coroutineScope.launch {
             isLoading = true
             try {
-                recommendations = AiCoachUseCase.generateCoachingInsights(
+                val generatedRecs = AiCoachUseCase.generateCoachingInsights(
                     activities = activities,
                     goal = goal,
-                    revenue = personalRevenue
+                    revenue = personalRevenue,
+                    apiKey = userApiKey
                 )
+                viewModel.updateCoachRecommendations(generatedRecs)
             } catch (e: Exception) {
                 snackbarHostState.showSnackbar(
                     message = e.message ?: "Terjadi kesalahan yang tidak diketahui."
@@ -121,30 +124,6 @@ fun CoachScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                     )
                     KnowledgeGapRecommendations(recommendations!!.knowledgeGaps)
-                }
-            } else if (!isLoading) {
-                item {
-                    Text(
-                        text = "PERFORMANCE REVIEW",
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 1.5.sp,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                    )
-                    PerformanceSection()
-                }
-                
-                item {
-                    Text(
-                        text = "KNOWLEDGE GAP RECOMMENDATIONS",
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 1.5.sp,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                    )
-                    KnowledgeGapEmpty()
                 }
             }
         }
@@ -240,19 +219,7 @@ fun InsightsSection(isLoading: Boolean, onGenerateClick: () -> Unit, tips: List<
     }
 }
 
-@Composable
-fun PerformanceSection() {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        CoachCard(
-            title = "Monthly Review",
-            description = "Analisis komprehensif metrik performa sales selama periode bulan ini.",
-            icon = Icons.Outlined.Lightbulb,
-            actionText = "Open Review",
-            highlight = false,
-            onClick = {}
-        )
-    }
-}
+
 
 @Composable
 fun KnowledgeGapEmpty() {

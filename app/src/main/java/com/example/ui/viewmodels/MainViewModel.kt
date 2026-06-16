@@ -10,10 +10,12 @@ import com.example.data.local.entity.ProductEntity
 import com.example.data.repository.AppRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
 
-class MainViewModel(private val repository: AppRepository) : ViewModel() {
+import android.content.SharedPreferences
+
+class MainViewModel(private val repository: AppRepository, private val prefs: SharedPreferences) : ViewModel() {
 
     val allProducts: StateFlow<List<ProductEntity>> = repository.allProducts
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -37,6 +39,33 @@ class MainViewModel(private val repository: AppRepository) : ViewModel() {
     private val _clockInHour = MutableStateFlow<Int?>(null)
     val clockInHour: StateFlow<Int?> = _clockInHour.asStateFlow()
 
+    private val _jobTitle = MutableStateFlow("Sales Associate")
+    val jobTitle: StateFlow<String> = _jobTitle.asStateFlow()
+
+    private val _workLocation = MutableStateFlow("Tunjungan Plaza")
+    val workLocation: StateFlow<String> = _workLocation.asStateFlow()
+
+    private val _shiftPagiTime = MutableStateFlow("07.30 - 17.00")
+    val shiftPagiTime: StateFlow<String> = _shiftPagiTime.asStateFlow()
+
+    private val _shiftSiangTime = MutableStateFlow("14.00 - 22.00")
+    val shiftSiangTime: StateFlow<String> = _shiftSiangTime.asStateFlow()
+
+    fun updateProfile(job: String, location: String, shiftPagi: String, shiftSiang: String) {
+        _jobTitle.value = job
+        _workLocation.value = location
+        _shiftPagiTime.value = shiftPagi
+        _shiftSiangTime.value = shiftSiang
+    }
+
+    private val _openRouterApiKey = MutableStateFlow(prefs.getString("OPENROUTER_API_KEY", "") ?: "")
+    val openRouterApiKey: StateFlow<String> = _openRouterApiKey.asStateFlow()
+
+    fun updateOpenRouterApiKey(key: String) {
+        _openRouterApiKey.value = key
+        prefs.edit().putString("OPENROUTER_API_KEY", key).apply()
+    }
+
     private val _firstClockInTime = MutableStateFlow<String?>("Belum ada")
     val firstClockInTime: StateFlow<String?> = _firstClockInTime.asStateFlow()
 
@@ -45,8 +74,8 @@ class MainViewModel(private val repository: AppRepository) : ViewModel() {
         _clockInHour.value = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         if (_firstClockInTime.value == "Belum ada") {
             try {
-                val formatter = java.time.format.DateTimeFormatter.ofPattern("dd MMMM yyyy", java.util.Locale("id", "ID"))
-                _firstClockInTime.value = java.time.LocalDate.now().format(formatter)
+                val formatter = SimpleDateFormat("dd MMMM yyyy", java.util.Locale("id", "ID"))
+                _firstClockInTime.value = formatter.format(Date())
             } catch (e: Throwable) {
                 _firstClockInTime.value = "14 Juni 2026"
             }
@@ -58,7 +87,7 @@ class MainViewModel(private val repository: AppRepository) : ViewModel() {
         _clockInHour.value = null
     }
 
-    private val currentMonthYear = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"))
+    private val currentMonthYear = SimpleDateFormat("yyyy-MM", java.util.Locale.getDefault()).format(Date())
     
     val currentGoal: StateFlow<GoalEntity?> = repository.getGoalByMonth(currentMonthYear)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
@@ -137,13 +166,20 @@ class MainViewModel(private val repository: AppRepository) : ViewModel() {
             repository.deleteGoal(goal)
         }
     }
+
+    private val _coachRecommendations = MutableStateFlow<com.example.logic.CoachRecommendations?>(null)
+    val coachRecommendations: StateFlow<com.example.logic.CoachRecommendations?> = _coachRecommendations.asStateFlow()
+
+    fun updateCoachRecommendations(rec: com.example.logic.CoachRecommendations) {
+        _coachRecommendations.value = rec
+    }
 }
 
-class MainViewModelFactory(private val repository: AppRepository) : ViewModelProvider.Factory {
+class MainViewModelFactory(private val repository: AppRepository, private val prefs: SharedPreferences) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return MainViewModel(repository) as T
+            return MainViewModel(repository, prefs) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -23,7 +23,8 @@ object AiCoachUseCase {
     suspend fun generateCoachingInsights(
         activities: List<ActivityEntity>,
         goal: GoalEntity?,
-        revenue: Double
+        revenue: Double,
+        apiKey: String
     ): CoachRecommendations = withContext(Dispatchers.IO) {
         val target = goal?.personalTarget ?: 0.0
         val targetHit = if (target > 0) String.format("%.1f", (revenue / target) * 100) else "0.0"
@@ -59,7 +60,7 @@ object AiCoachUseCase {
         """.trimIndent()
 
         try {
-            val responseText = OpenRouterClient.queryOpenRouter(prompt)
+            val responseText = OpenRouterClient.queryOpenRouter(prompt, apiKey)
             val jsonText = responseText.replace("```json", "").replace("```", "").trim()
             Gson().fromJson(jsonText, CoachRecommendations::class.java)
         } catch (e: Throwable) {

@@ -27,10 +27,10 @@ object OpenRouterClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    suspend fun queryOpenRouter(prompt: String): String = withContext(Dispatchers.IO) {
-        val apiKey = BuildConfig.OPENROUTER_API_KEY
+    suspend fun queryOpenRouter(prompt: String, userApiKey: String): String = withContext(Dispatchers.IO) {
+        val apiKey = userApiKey.ifEmpty { BuildConfig.OPENROUTER_API_KEY }
         if (apiKey.isEmpty() || apiKey == "MY_OPENROUTER_API_KEY") {
-            throw Exception("OpenRouter API Key belum di-set di Settings (Secrets). Silakan masukkan OPENROUTER_API_KEY.")
+            throw Exception("OpenRouter API Key belum di-set. Silakan isi API Key di menu Edit Profil.")
         }
 
         val requestBody = JSONObject().apply {
@@ -82,10 +82,10 @@ object OpenRouterClient {
         }
     }
 
-    suspend fun queryOpenRouterMultimodal(prompt: String, base64Image: String): String = withContext(Dispatchers.IO) {
-        val apiKey = BuildConfig.OPENROUTER_API_KEY
+    suspend fun queryOpenRouterMultimodal(prompt: String, base64Image: String, userApiKey: String = ""): String = withContext(Dispatchers.IO) {
+        val apiKey = userApiKey.ifEmpty { BuildConfig.OPENROUTER_API_KEY }
         if (apiKey.isEmpty() || apiKey == "MY_OPENROUTER_API_KEY") {
-            throw Exception("OpenRouter API Key belum di-set di Settings (Secrets). Silakan masukkan OPENROUTER_API_KEY.")
+            throw Exception("OpenRouter API Key belum di-set. Silakan isi API Key di menu Edit Profil.")
         }
 
         val requestBodyMap = mapOf(

@@ -45,9 +45,39 @@ private fun lerp(start: Float, stop: Float, fraction: Float): Float {
 fun AnalyticsScreen(viewModel: MainViewModel) {
     val scrollState = rememberLazyListState()
     val localHazeState = com.example.LocalHazeState.current
-    val revenue by viewModel.personalRevenue.collectAsState()
-    val transactions by viewModel.personalTransactions.collectAsState()
     var selectedPeriod by remember { mutableStateOf(2) } // 0: Daily, 1: Weekly, 2: Monthly
+
+    val allActivities by viewModel.allActivities.collectAsState()
+    val allProducts by viewModel.allProducts.collectAsState()
+    
+    val filteredActivities = remember(allActivities, selectedPeriod) {
+        val now = java.util.Calendar.getInstance()
+        allActivities.filter { activity ->
+            val cal = java.util.Calendar.getInstance()
+            cal.timeInMillis = activity.timestamp
+            when (selectedPeriod) {
+                0 -> {
+                    cal.get(java.util.Calendar.DAY_OF_YEAR) == now.get(java.util.Calendar.DAY_OF_YEAR) &&
+                    cal.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR)
+                }
+                1 -> {
+                    val diff = now.timeInMillis - activity.timestamp
+                    diff in 0..(7L * 24 * 60 * 60 * 1000)
+                }
+                else -> {
+                    cal.get(java.util.Calendar.MONTH) == now.get(java.util.Calendar.MONTH) &&
+                    cal.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR)
+                }
+            }
+        }
+    }
+
+    val revenue = remember(filteredActivities) {
+        filteredActivities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
+    }
+    val transactions = remember(filteredActivities) {
+        filteredActivities.count { it.type == "SALE" && it.creditedToId == null }
+    }
 
     val headerContent = remember(revenue, transactions, selectedPeriod) {
         object : CollapsibleHeaderContent {
@@ -89,42 +119,42 @@ fun AnalyticsScreen(viewModel: MainViewModel) {
         ) {
             item {
                 SectionTitle("REVENUE TREND")
-                RevenueChart(viewModel)
+                RevenueChart(filteredActivities, selectedPeriod)
             }
 
             item {
                 SectionTitle("KEY METRICS")
-                MetricsGrid(viewModel)
+                MetricsGrid(filteredActivities)
             }
             
             item {
                 SectionTitle("Aktivitas per Jam")
-                PeakHourHeatmap(viewModel)
+                PeakHourHeatmap(filteredActivities)
             }
 
             item {
                 SectionTitle("CONVERSION FUNNEL")
-                ConversionFunnel(viewModel)
+                ConversionFunnel(filteredActivities)
             }
 
             item {
                 SectionTitle("PRODUCT ANALYTICS")
-                ProductAnalytics(viewModel)
+                ProductAnalytics(filteredActivities, allProducts)
             }
 
             item {
                 SectionTitle("ATTRIBUTION ANALYTICS")
-                AttributionAnalytics(viewModel)
+                AttributionAnalytics(filteredActivities)
             }
 
             item {
                 SectionTitle("WIN/LOSS ANALYSIS")
-                WinLossAnalysis(viewModel)
+                WinLossAnalysis(filteredActivities)
             }
 
             item {
                 SectionTitle("KNOWLEDGE GAP")
-                KnowledgeGapAnalysis(viewModel)
+                KnowledgeGapAnalysis(filteredActivities)
             }
         }
 
@@ -155,7 +185,7 @@ fun SegmentedPeriodControl(
     onPeriodSelect: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val periods = listOf("Daily", "Weekly", "Montly") // misspelled Monthly to fit perfectly or match pattern
+    val periods = listOf("Daily", "Weekly", "Monthly")
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -332,11 +362,10 @@ fun AnalyticsHeaderCollapsed(
 }
 
 @Composable
-fun RevenueChart(viewModel: MainViewModel) {
+fun RevenueChart(activities: List<com.example.data.local.entity.ActivityEntity>, selectedPeriod: Int) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    val activities by viewModel.allActivities.collectAsState()
-    val revenue by viewModel.personalRevenue.collectAsState()
+    val revenue = activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
     val sales = activities.filter { it.type == "SALE" }.sortedBy { it.timestamp }
@@ -344,11 +373,17 @@ fun RevenueChart(viewModel: MainViewModel) {
     val dailyRevenue = sales.groupBy { sf.format(Date(it.timestamp)) }
         .mapValues { it.value.sumOf { s -> s.price ?: 0.0 } }
         .entries.toList()
+        
+    val periodName = when(selectedPeriod) {
+        0 -> "Today"
+        1 -> "This Week"
+        else -> "This Month"
+    }
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth().height(250.dp)) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("This Month", color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
+                Text(periodName, color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.TrendingUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
@@ -397,15 +432,14 @@ fun RevenueChart(viewModel: MainViewModel) {
 }
 
 @Composable
-fun MetricsGrid(viewModel: MainViewModel) {
+fun MetricsGrid(activities: List<com.example.data.local.entity.ActivityEntity>) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    val activities by viewModel.allActivities.collectAsState()
     val interests = activities.count { it.type == "INTEREST" }.toFloat()
     val salesCount = activities.count { it.type == "SALE" }.toFloat()
     val conv = if (interests > 0) (salesCount / interests * 100) else 0f
     
-    val rev by viewModel.personalRevenue.collectAsState()
+    val rev = activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
     val avg = if (salesCount > 0) rev / salesCount else 0.0
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
@@ -426,10 +460,9 @@ fun MetricsGrid(viewModel: MainViewModel) {
 }
 
 @Composable
-fun PeakHourHeatmap(viewModel: MainViewModel) {
+fun PeakHourHeatmap(activities: List<com.example.data.local.entity.ActivityEntity>) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    val activities by viewModel.allActivities.collectAsState()
     val formatter = SimpleDateFormat("HH", Locale.getDefault())
     val hourCounts = activities.groupBy { formatter.format(Date(it.timestamp)).toInt() }.mapValues { it.value.size }
     
@@ -457,8 +490,7 @@ fun PeakHourHeatmap(viewModel: MainViewModel) {
 }
 
 @Composable
-fun ConversionFunnel(viewModel: MainViewModel) {
-    val activities by viewModel.allActivities.collectAsState()
+fun ConversionFunnel(activities: List<com.example.data.local.entity.ActivityEntity>) {
     val interests = activities.count { it.type == "INTEREST" }
     val questions = activities.count { it.type == "QUESTION" }
     val sales = activities.count { it.type == "SALE" }
@@ -491,9 +523,7 @@ fun FunnelStep(label: String, value: String, percentage: Float) {
 }
 
 @Composable
-fun ProductAnalytics(viewModel: MainViewModel) {
-    val activities by viewModel.allActivities.collectAsState()
-    val products by viewModel.allProducts.collectAsState()
+fun ProductAnalytics(activities: List<com.example.data.local.entity.ActivityEntity>, products: List<com.example.data.local.entity.ProductEntity>) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
     val salesByProduct = activities.filter { it.type == "SALE" }
@@ -535,8 +565,7 @@ fun ProductItem(name: String, revenue: String, units: String) {
 }
 
 @Composable
-fun AttributionAnalytics(viewModel: MainViewModel) {
-    val activities by viewModel.allActivities.collectAsState()
+fun AttributionAnalytics(activities: List<com.example.data.local.entity.ActivityEntity>) {
     val sales = activities.filter { it.type == "SALE" }
     
     val actualRevenue = sales.filter { it.creditedToId == null }.sumOf { it.price ?: 0.0 }
@@ -573,10 +602,9 @@ fun AttributionItem(source: String, value: String, percentage: Float, color: Col
 }
 
 @Composable
-fun WinLossAnalysis(viewModel: MainViewModel) {
+fun WinLossAnalysis(activities: List<com.example.data.local.entity.ActivityEntity>) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
     
-    val activities by viewModel.allActivities.collectAsState()
     val lost = activities.filter { it.type == "LOST" }
     val totalLost = lost.size
     
@@ -607,10 +635,9 @@ fun MissReason(reason: String, percentage: Float, bodyColor: Color) {
 }
 
 @Composable
-fun KnowledgeGapAnalysis(viewModel: MainViewModel) {
+fun KnowledgeGapAnalysis(activities: List<com.example.data.local.entity.ActivityEntity>) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    val activities by viewModel.allActivities.collectAsState()
     val questions = activities.filter { it.type == "QUESTION" }
     
     val topQuestions = questions.groupBy { it.questionCategory ?: "Lainnya" }

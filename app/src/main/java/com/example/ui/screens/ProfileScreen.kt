@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.TrackChanges
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -79,8 +80,14 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
     val scrollState = rememberLazyListState()
     val localHazeState = com.example.LocalHazeState.current
     val firstClockInTime by viewModel.firstClockInTime.collectAsState()
+    val jobTitle by viewModel.jobTitle.collectAsState()
+    val workLocation by viewModel.workLocation.collectAsState()
+    val shiftPagiTime by viewModel.shiftPagiTime.collectAsState()
+    val shiftSiangTime by viewModel.shiftSiangTime.collectAsState()
 
-    val headerContent = remember(firstClockInTime) {
+    var showEditProfileDialog by remember { mutableStateOf(false) }
+
+        val headerContent = remember(firstClockInTime, jobTitle, workLocation, shiftPagiTime, shiftSiangTime) {
         object : CollapsibleHeaderContent {
             override val expandedHeight = 220.dp
             override val collapsedHeight = 136.dp
@@ -91,9 +98,14 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                     ProfileHeaderExpanded(
                         collapseProgress = collapseProgress,
                         hazeState = localHazeState,
-                        firstClockIn = firstClockInTime ?: "Belum ada"
+                        firstClockIn = firstClockInTime ?: "Belum ada",
+                        jobTitle = jobTitle,
+                        workLocation = workLocation
                     )
-                    ProfileHeaderCollapsed(collapseProgress = collapseProgress)
+                    ProfileHeaderCollapsed(
+                        collapseProgress = collapseProgress,
+                        jobTitle = jobTitle
+                    )
                 }
             }
         }
@@ -233,6 +245,15 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                     }
                 )
             }
+            item {
+                SettingItemCard(
+                    hazeState = localHazeState,
+                    icon = Icons.Outlined.Edit,
+                    title = "Edit Profil",
+                    subtitle = "Ubah jabatan, lokasi, dan jam shift",
+                    onClick = { showEditProfileDialog = true }
+                )
+            }
 
             item {
                 Text(
@@ -293,6 +314,27 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
         scrollState = scrollState,
         content = headerContent
     )
+    
+    val openRouterApiKey by viewModel.openRouterApiKey.collectAsState()
+    
+    if (showEditProfileDialog) {
+        EditProfileDialog(
+            jobTitle = jobTitle,
+            workLocation = workLocation,
+            shiftPagi = shiftPagiTime,
+            shiftSiang = shiftSiangTime,
+            apiKey = openRouterApiKey,
+            onDismiss = { showEditProfileDialog = false },
+            onSave = { job, loc, pagi, siang, key ->
+                viewModel.updateProfile(job, loc, pagi, siang)
+                viewModel.updateOpenRouterApiKey(key)
+                showEditProfileDialog = false
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Profil berhasil diperbarui")
+                }
+            }
+        )
+    }
 }
 }
 
@@ -358,7 +400,9 @@ fun SettingItemCard(
 fun ProfileHeaderExpanded(
     collapseProgress: Float,
     hazeState: HazeState,
-    firstClockIn: String
+    firstClockIn: String,
+    jobTitle: String,
+    workLocation: String
 ) {
     Column(
         modifier = Modifier
@@ -390,7 +434,7 @@ fun ProfileHeaderExpanded(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Sales Regular",
+                        text = jobTitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -417,7 +461,7 @@ fun ProfileHeaderExpanded(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Mall 23 Semarang",
+                        text = workLocation,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -456,7 +500,10 @@ fun ProfileHeaderExpanded(
 }
 
 @Composable
-fun ProfileHeaderCollapsed(collapseProgress: Float) {
+fun ProfileHeaderCollapsed(
+    collapseProgress: Float,
+    jobTitle: String
+) {
     if (collapseProgress > 0.5f) {
         Row(
             modifier = Modifier
@@ -476,7 +523,7 @@ fun ProfileHeaderCollapsed(collapseProgress: Float) {
                 color = androidx.compose.ui.graphics.Color.White
             )
             Text(
-                text = "Sales Regular",
+                text = jobTitle,
                 style = MaterialTheme.typography.bodyLarge,
                 color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f),
                 fontWeight = FontWeight.SemiBold
@@ -484,3 +531,79 @@ fun ProfileHeaderCollapsed(collapseProgress: Float) {
         }
     }
 }
+
+@Composable
+fun EditProfileDialog(
+    jobTitle: String,
+    workLocation: String,
+    shiftPagi: String,
+    shiftSiang: String,
+    apiKey: String,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String, String) -> Unit
+) {
+    var job by remember { mutableStateOf(jobTitle) }
+    var location by remember { mutableStateOf(workLocation) }
+    var pagi by remember { mutableStateOf(shiftPagi) }
+    var siang by remember { mutableStateOf(shiftSiang) }
+    var apiKeyValue by remember { mutableStateOf(apiKey) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Edit Profil", style = MaterialTheme.typography.titleLarge)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = job,
+                    onValueChange = { job = it },
+                    label = { Text("Jabatan") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = { Text("Lokasi Kerja") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = pagi,
+                    onValueChange = { pagi = it },
+                    label = { Text("Jam Shift Pagi") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = siang,
+                    onValueChange = { siang = it },
+                    label = { Text("Jam Shift Siang") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = apiKeyValue,
+                    onValueChange = { apiKeyValue = it },
+                    label = { Text("OpenRouter API Key") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(job, location, pagi, siang, apiKeyValue) }
+            ) {
+                Text("Simpan")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal")
+            }
+        }
+    )
+}
+
