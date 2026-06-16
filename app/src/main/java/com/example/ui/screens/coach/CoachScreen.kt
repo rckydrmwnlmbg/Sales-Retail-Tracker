@@ -185,7 +185,7 @@ fun InsightsSection(isLoading: Boolean, onGenerateClick: () -> Unit, tips: List<
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         CoachCard(
             title = "Generate Insights",
-            description = "Buat rangkuman analisis aktivitas toko hari ini beserta evaluasi dari AI Coach Gemini.",
+            description = "Buat rangkuman analisis aktivitas toko hari ini beserta evaluasi dari AI Coach.",
             icon = Icons.Outlined.Summarize,
             actionText = if (isLoading) "Menganalisa..." else "Generate",
             onClick = onGenerateClick,

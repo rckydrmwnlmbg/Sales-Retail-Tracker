@@ -16,6 +16,8 @@ import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -127,19 +129,50 @@ fun JournalScreen(viewModel: MainViewModel) {
             if (filteredEntries.isEmpty()) {
                 item {
                     val onBg = MaterialTheme.colorScheme.onBackground
-                    Text(
-                        text = "No activities found.",
-                        color = onBg.copy(alpha = 0.5f),
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(vertical = 32.dp)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Book,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                                .copy(alpha = 0.5f),
+                            modifier = Modifier.size(72.dp)
+                        )
+                        Spacer(Modifier.height(20.dp))
+                        Text(
+                            text = "Belum Ada Aktivitas",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "Tap tombol + untuk mulai mencatat\ntransaksi atau interaksi pertamamu",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 }
             } else {
                 items(filteredEntries, key = { it.id }) { entry ->
-                    val productName = products.find { it.id == entry.productId }?.name ?: "Unknown Product"
-                    val title = if (entry.type == "SALE") productName else "${entry.type}: $productName"
-                    val details = entry.notes ?: ""
-                    val amount = if (entry.type == "SALE" && entry.price != null) NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(entry.price) else null
+                    val productName = products.find { it.id == entry.productId }?.name
+                    val title = when (entry.type) {
+                        "SALE" -> productName ?: "Penjualan Umum"
+                        "INTEREST" -> "Ketertarikan: ${productName ?: "Produk/Layanan"}"
+                        "QUESTION" -> "Pertanyaan: ${entry.questionCategory ?: (productName ?: "Umum")}"
+                        "LOST" -> "Peluang Hilang: ${entry.lostReason ?: "Lainnya"}"
+                        "AVAILABILITY" -> "Ketersediaan: ${entry.availabilityStatus ?: (productName ?: "Stok")}"
+                        "LEARNING" -> "Catatan Belajar: ${entry.topic ?: "Umum"}"
+                        else -> "Catatan Cepat"
+                    }
+                    val details = entry.notes?.takeIf { it.isNotBlank() } ?: "Tidak ada catatan detail."
+                    val amount = if (entry.type == "SALE" && entry.price != null && entry.price > 0.0) NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(entry.price) else null
                     val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(entry.timestamp))
 
                     JournalEntryCard(
@@ -149,7 +182,9 @@ fun JournalScreen(viewModel: MainViewModel) {
                         amount = amount,
                         time = time,
                         isEdited = entry.isCorrection,
-                        onEdit = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }
+                        onDelete = {
+                            viewModel.deleteActivity(entry)
+                        }
                     )
                 }
             }
@@ -375,7 +410,7 @@ fun FilterChipCustom(label: String, isSelected: Boolean, accentColor: Color, onC
 }
 
 @Composable
-fun JournalEntryCard(type: String, title: String, details: String, amount: String?, time: String, isEdited: Boolean, onEdit: () -> Unit) {
+fun JournalEntryCard(type: String, title: String, details: String, amount: String?, time: String, isEdited: Boolean, onDelete: () -> Unit) {
     val color = if (type == "SALE") NeonCyan else ElectricMagenta
     val icon = if (type == "SALE") Icons.Outlined.AttachMoney else Icons.Outlined.ChatBubbleOutline
 
@@ -416,8 +451,8 @@ fun JournalEntryCard(type: String, title: String, details: String, amount: Strin
                 }
 
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.End) {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp).background(onSurfaceColor.copy(alpha = 0.05f), CircleShape)) {
-                        Icon(imageVector = Icons.Outlined.Edit, contentDescription = "Edit", tint = onSurfaceColor.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp).background(onSurfaceColor.copy(alpha = 0.05f), CircleShape)) {
+                        Icon(imageVector = Icons.Outlined.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                     }
                 }
             }

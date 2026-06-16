@@ -25,6 +25,9 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
 
     val allActivities: StateFlow<List<ActivityEntity>> = repository.allActivities
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        
+    val allGoals: StateFlow<List<GoalEntity>> = repository.allGoals
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _themeMode = MutableStateFlow(0) // 0: System, 1: Dark, 2: Light
     val themeMode: StateFlow<Int> = _themeMode.asStateFlow()
@@ -38,24 +41,35 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
 
     private val _clockInHour = MutableStateFlow<Int?>(null)
     val clockInHour: StateFlow<Int?> = _clockInHour.asStateFlow()
+    
+    private val _userName = MutableStateFlow(prefs.getString("USER_NAME", "Ricky") ?: "Ricky")
+    val userName: StateFlow<String> = _userName.asStateFlow()
 
-    private val _jobTitle = MutableStateFlow("Sales Associate")
+    private val _jobTitle = MutableStateFlow(prefs.getString("JOB_TITLE", "Sales Associate") ?: "Sales Associate")
     val jobTitle: StateFlow<String> = _jobTitle.asStateFlow()
 
-    private val _workLocation = MutableStateFlow("Tunjungan Plaza")
+    private val _workLocation = MutableStateFlow(prefs.getString("WORK_LOCATION", "Tunjungan Plaza") ?: "Tunjungan Plaza")
     val workLocation: StateFlow<String> = _workLocation.asStateFlow()
 
-    private val _shiftPagiTime = MutableStateFlow("07.30 - 17.00")
+    private val _shiftPagiTime = MutableStateFlow(prefs.getString("SHIFT_PAGI", "07.30 - 17.00") ?: "07.30 - 17.00")
     val shiftPagiTime: StateFlow<String> = _shiftPagiTime.asStateFlow()
 
-    private val _shiftSiangTime = MutableStateFlow("14.00 - 22.00")
+    private val _shiftSiangTime = MutableStateFlow(prefs.getString("SHIFT_SIANG", "14.00 - 22.00") ?: "14.00 - 22.00")
     val shiftSiangTime: StateFlow<String> = _shiftSiangTime.asStateFlow()
 
-    fun updateProfile(job: String, location: String, shiftPagi: String, shiftSiang: String) {
+    fun updateProfile(name: String, job: String, location: String, shiftPagi: String, shiftSiang: String) {
+        _userName.value = name
         _jobTitle.value = job
         _workLocation.value = location
         _shiftPagiTime.value = shiftPagi
         _shiftSiangTime.value = shiftSiang
+        prefs.edit()
+            .putString("USER_NAME", name)
+            .putString("JOB_TITLE", job)
+            .putString("WORK_LOCATION", location)
+            .putString("SHIFT_PAGI", shiftPagi)
+            .putString("SHIFT_SIANG", shiftSiang)
+            .apply()
     }
 
     private val _openRouterApiKey = MutableStateFlow(prefs.getString("OPENROUTER_API_KEY", "") ?: "")
@@ -66,7 +80,19 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
         prefs.edit().putString("OPENROUTER_API_KEY", key).apply()
     }
 
-    private val _firstClockInTime = MutableStateFlow<String?>("Belum ada")
+    private val _supabaseUrl = MutableStateFlow(prefs.getString("SUPABASE_URL", "") ?: "")
+    val supabaseUrl: StateFlow<String> = _supabaseUrl.asStateFlow()
+
+    private val _supabaseKey = MutableStateFlow(prefs.getString("SUPABASE_KEY", "") ?: "")
+    val supabaseKey: StateFlow<String> = _supabaseKey.asStateFlow()
+
+    fun updateSupabaseCredentials(url: String, key: String) {
+        _supabaseUrl.value = url
+        _supabaseKey.value = key
+        prefs.edit().putString("SUPABASE_URL", url).putString("SUPABASE_KEY", key).apply()
+    }
+
+    private val _firstClockInTime = MutableStateFlow<String?>(prefs.getString("FIRST_CLOCK_IN", "Belum ada"))
     val firstClockInTime: StateFlow<String?> = _firstClockInTime.asStateFlow()
 
     fun clockIn() {
@@ -75,9 +101,11 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
         if (_firstClockInTime.value == "Belum ada") {
             try {
                 val formatter = SimpleDateFormat("dd MMMM yyyy", java.util.Locale("id", "ID"))
-                _firstClockInTime.value = formatter.format(Date())
+                val timeStr = formatter.format(Date())
+                _firstClockInTime.value = timeStr
+                prefs.edit().putString("FIRST_CLOCK_IN", timeStr).apply()
             } catch (e: Throwable) {
-                _firstClockInTime.value = "14 Juni 2026"
+                // Ignore
             }
         }
     }
@@ -95,6 +123,19 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
     // Derived states for Home Screen
     val personalRevenue: StateFlow<Double> = allActivities.map { activities ->
         activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
+
+    val todayPersonalRevenue: StateFlow<Double> = allActivities.map { activities ->
+        val calendar = java.util.Calendar.getInstance()
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        val startOfDay = calendar.timeInMillis
+        
+        activities.filter { 
+            it.type == "SALE" && it.creditedToId == null && it.timestamp >= startOfDay 
+        }.sumOf { it.price ?: 0.0 }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
     val personalTransactions: StateFlow<Int> = allActivities.map { activities ->
@@ -120,6 +161,12 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
     fun addActivity(activity: ActivityEntity) {
         viewModelScope.launch {
             repository.insertActivity(activity)
+        }
+    }
+
+    fun deleteActivity(activity: ActivityEntity) {
+        viewModelScope.launch {
+            repository.deleteActivity(activity)
         }
     }
 

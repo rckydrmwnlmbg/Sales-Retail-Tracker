@@ -63,6 +63,7 @@ fun LogActivityScreen(viewModel: MainViewModel) {
     var saleProductId by remember { mutableStateOf<Int?>(null) }
     var salePrice by remember { mutableStateOf("") }
     var saleCreditedToId by remember { mutableStateOf<Int?>(null) } // null = Me
+    var saleCreditedFromId by remember { mutableStateOf<Int?>(null) } // null = Me
     var saleNotes by remember { mutableStateOf("") }
 
     // Non-Sale Form State
@@ -145,6 +146,8 @@ fun LogActivityScreen(viewModel: MainViewModel) {
                             onPriceChange = { salePrice = it },
                             creditedToId = saleCreditedToId,
                             onCreditedToChange = { saleCreditedToId = it },
+                            creditedFromId = saleCreditedFromId,
+                            onCreditedFromChange = { saleCreditedFromId = it },
                             notes = saleNotes,
                             onNotesChange = { saleNotes = it }
                         )
@@ -191,6 +194,7 @@ fun LogActivityScreen(viewModel: MainViewModel) {
                                     productId = saleProductId,
                                     price = salePrice.toDoubleOrNull() ?: 0.0,
                                     creditedToId = saleCreditedToId,
+                                    creditedFromId = saleCreditedFromId,
                                     notes = saleNotes
                                 )
                             } else {
@@ -279,10 +283,12 @@ fun SaleForm(
     productId: Int?, onProductChange: (com.example.data.local.entity.ProductEntity) -> Unit,
     price: String, onPriceChange: (String) -> Unit,
     creditedToId: Int?, onCreditedToChange: (Int?) -> Unit,
+    creditedFromId: Int?, onCreditedFromChange: (Int?) -> Unit,
     notes: String, onNotesChange: (String) -> Unit
 ) {
     var productDropdownExpanded by remember { mutableStateOf(false) }
     var colleagueDropdownExpanded by remember { mutableStateOf(false) }
+    var creditedFromDropdownExpanded by remember { mutableStateOf(false) }
     val formatter = SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault())
     val onBg = MaterialTheme.colorScheme.onBackground
 
@@ -323,7 +329,8 @@ fun SaleForm(
                     value = if (creditedToId == null) "Me / Current User" else colleagues.find { it.id == creditedToId }?.name ?: "",
                     onValueChange = {}, readOnly = true, label = { Text("Credited To") },
                     modifier = Modifier.fillMaxWidth().menuAnchor(), colors = colors,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = colleagueDropdownExpanded) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = colleagueDropdownExpanded) },
+                    enabled = creditedFromId == null // Cannot credit to someone else if someone credited to me
                 )
                 ExposedDropdownMenu(expanded = colleagueDropdownExpanded, onDismissRequest = { colleagueDropdownExpanded = false }) {
                     DropdownMenuItem(text = { Text("Me / Current User") }, onClick = { onCreditedToChange(null); colleagueDropdownExpanded = false })
@@ -332,10 +339,27 @@ fun SaleForm(
                     }
                 }
             }
+            
+            // Credited From
+            ExposedDropdownMenuBox(expanded = creditedFromDropdownExpanded, onExpandedChange = { creditedFromDropdownExpanded = it }) {
+                OutlinedTextField(
+                    value = if (creditedFromId == null) "Me / Current User" else colleagues.find { it.id == creditedFromId }?.name ?: "",
+                    onValueChange = {}, readOnly = true, label = { Text("Sale Made By (Credited From)") },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(), colors = colors,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = creditedFromDropdownExpanded) },
+                    enabled = creditedToId == null // Cannot have someone credit to me if I am crediting to someone else
+                )
+                ExposedDropdownMenu(expanded = creditedFromDropdownExpanded, onDismissRequest = { creditedFromDropdownExpanded = false }) {
+                    DropdownMenuItem(text = { Text("Me / Current User") }, onClick = { onCreditedFromChange(null); creditedFromDropdownExpanded = false })
+                    colleagues.forEach { col ->
+                        DropdownMenuItem(text = { Text(col.name) }, onClick = { onCreditedFromChange(col.id); creditedFromDropdownExpanded = false })
+                    }
+                }
+            }
 
-            // Timestamp (Readonly for now)
+            // Timestamp
             OutlinedTextField(
-                value = formatter.format(Date()), onValueChange = {}, label = { Text("Timestamp") }, readOnly = true, modifier = Modifier.fillMaxWidth(), colors = colors
+                value = formatter.format(Date()), onValueChange = {}, label = { Text("Timestamp (Tercatat Otomatis)") }, readOnly = true, modifier = Modifier.fillMaxWidth(), colors = colors
             )
 
             // Notes

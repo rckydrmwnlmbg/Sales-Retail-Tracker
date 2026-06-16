@@ -61,6 +61,9 @@ fun ManageProductsScreen(
     var scanUiState by remember { mutableStateOf<ScanUiState>(ScanUiState.Idle) }
     var showScanResultDialog by remember { mutableStateOf(false) }
 
+    val openRouterApiKey by viewModel.openRouterApiKey.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
@@ -68,7 +71,7 @@ fun ManageProductsScreen(
             scanUiState = ScanUiState.Processing
             coroutineScope.launch {
                 try {
-                    val result = ScanBrochureUseCase.scanBrochure(bitmap)
+                    val result = ScanBrochureUseCase.scanBrochure(bitmap, openRouterApiKey)
                     scanUiState = ScanUiState.Success(result)
                     if (result.products.isNotEmpty()) {
                         showScanResultDialog = true
@@ -87,9 +90,52 @@ fun ManageProductsScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Fitur upload dokumen PDF/Excel saat ini tahap pengembangan.")
-            }
+             val contentResolver = context.contentResolver
+             try {
+                 val mimeType = contentResolver.getType(uri)
+                 var bitmap: android.graphics.Bitmap? = null
+                 if (mimeType == "application/pdf") {
+                     val pfd = contentResolver.openFileDescriptor(uri, "r")
+                     if (pfd != null) {
+                         val pdfRenderer = android.graphics.pdf.PdfRenderer(pfd)
+                         if (pdfRenderer.pageCount > 0) {
+                             val page = pdfRenderer.openPage(0)
+                             bitmap = android.graphics.Bitmap.createBitmap(page.width * 2, page.height * 2, android.graphics.Bitmap.Config.ARGB_8888)
+                             bitmap.eraseColor(android.graphics.Color.WHITE)
+                             page.render(bitmap, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                             page.close()
+                         }
+                         pdfRenderer.close()
+                         pfd.close()
+                     }
+                 } else {
+                     val inputStream = contentResolver.openInputStream(uri)
+                     bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                     inputStream?.close()
+                 }
+
+                if(bitmap != null) {
+                    scanUiState = ScanUiState.Processing
+                    coroutineScope.launch {
+                        try {
+                            val result = ScanBrochureUseCase.scanBrochure(bitmap, openRouterApiKey)
+                            scanUiState = ScanUiState.Success(result)
+                            if (result.products.isNotEmpty()) {
+                                showScanResultDialog = true
+                            }
+                        } catch (e: Exception) {
+                            scanUiState = ScanUiState.Idle
+                            snackbarHostState.showSnackbar(
+                                message = e.message ?: "Terjadi kesalahan saat analisa gambar/dokumen."
+                            )
+                        }
+                    }
+                } else {
+                    coroutineScope.launch { snackbarHostState.showSnackbar("Gagal memproses dokumen/gambar yang dipilih") }
+                }
+             } catch (e: Exception) {
+                 coroutineScope.launch { snackbarHostState.showSnackbar("Gagal memuat dokumen: ${e.message}") }
+             }
         }
     }
 
@@ -207,7 +253,7 @@ fun ManageProductsScreen(
                 
                 Card(modifier = Modifier.fillMaxWidth()) {
                     ListItem(
-                        headlineContent = { Text("Upload PDF/Excel", color = MaterialTheme.colorScheme.onSurface) },
+                        headlineContent = { Text("Upload Gambar/Brosur", color = MaterialTheme.colorScheme.onSurface) },
                         supportingContent = { Text("Import file katalog produk", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         leadingContent = { Icon(Icons.Default.UploadFile, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
@@ -254,6 +300,21 @@ fun ManageProductsScreen(
                 Text("Confidence: ${result.confidence}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (result.notes.isNotEmpty()) {
                     Text("Notes: ${result.notes}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            for (sp in result.products) {
+                                viewModel.addOrUpdateProduct(sp.toProductEntity())
+                            }
+                            snackbarHostState.showSnackbar("Berhasil menambahkan ${result.products.size} produk.")
+                            showScanResultDialog = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Simpan Semua Produk")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {

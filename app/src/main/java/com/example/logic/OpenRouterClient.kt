@@ -34,7 +34,8 @@ object OpenRouterClient {
         }
 
         val requestBody = JSONObject().apply {
-            put("model", "nex-agi/nex-n2-pro:free")
+            put("model", "google/gemma-4-26b-a4b-it:free")
+
             put("messages", JSONArray().apply {
                 put(JSONObject().apply {
                     put("role", "user")
@@ -89,7 +90,7 @@ object OpenRouterClient {
         }
 
         val requestBodyMap = mapOf(
-            "model" to "meta-llama/llama-3.1-8b-instruct:free",
+            "model" to "google/gemma-4-26b-a4b-it:free",
             "messages" to listOf(
                 mapOf(
                     "role" to "user",

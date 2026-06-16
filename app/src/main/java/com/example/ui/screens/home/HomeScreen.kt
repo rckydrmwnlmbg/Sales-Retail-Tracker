@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.AttachMoney
@@ -91,8 +92,12 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
     val shiftPagiTimeStr by viewModel.shiftPagiTime.collectAsState()
     val shiftSiangTimeStr by viewModel.shiftSiangTime.collectAsState()
     val shiftTime = if (activeHour < 13) shiftPagiTimeStr else shiftSiangTimeStr
+    
+    val userName by viewModel.userName.collectAsState()
+    
+    var triggerParticles by remember { mutableStateOf(false) }
 
-    val headerContent = remember(isClockedIn, shiftName, shiftTime) {
+    val headerContent = remember(isClockedIn, shiftName, shiftTime, userName) {
         object : CollapsibleHeaderContent {
             override val expandedHeight = 220.dp
             override val collapsedHeight = 136.dp
@@ -103,7 +108,7 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
                     HomeHeaderExpanded(
                         collapseProgress = collapseProgress,
                         hazeState = localHazeState,
-                        userName = "Ricky",
+                        userName = userName,
                         shiftInfo = ShiftInfo(shiftName, shiftTime, isClockedIn),
                         onClockIn = { viewModel.clockIn() },
                         onClockOut = { viewModel.clockOut() }
@@ -138,6 +143,12 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
             
             item {
                 Spacer(modifier = Modifier.height(16.dp))
+                SectionHeader("Daily Goals")
+                DailyGoalSection(viewModel, onGoalAchieved = { triggerParticles = true })
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
                 SectionHeader("Target Progress")
                 ProgressSection(viewModel)
             }
@@ -159,6 +170,12 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
             hazeState = localHazeState,
             scrollState = scrollState,
             content = headerContent
+        )
+        
+        com.example.ui.components.ParticleEffect(
+            trigger = triggerParticles,
+            onComplete = { triggerParticles = false },
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -570,6 +587,82 @@ fun AiCoachPromoCard(onNavigate: (String) -> Unit) {
                 Text(text = "Get daily coaching and shift summaries.", color = bodyColor.copy(alpha = 0.6f), fontSize = 13.sp)
             }
             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Go", tint = bodyColor.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+fun DailyGoalSection(viewModel: MainViewModel, onGoalAchieved: () -> Unit) {
+    val bodyColor = MaterialTheme.colorScheme.onBackground
+    val todayRevenue by viewModel.todayPersonalRevenue.collectAsState()
+    
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+    
+    val currentGoal by viewModel.currentGoal.collectAsState()
+    val dailyTarget = currentGoal?.personalTarget?.div(26) ?: 0.0
+    
+    val todayStr = remember { java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
+    var isAchievedMarked by remember { mutableStateOf(prefs.getBoolean("DAILY_ACHIEVED_$todayStr", false)) }
+    
+    val progress = if (dailyTarget > 0) (todayRevenue / dailyTarget).coerceAtMost(1.0).toFloat() else 0f
+    val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
+    
+    val progressColor = when {
+        progress < 0.5f  -> Color(0xFFFF6B6B) 
+        progress < 1.0f  -> Color(0xFFFFD93D) 
+        else             -> Color(0xFF4ADE80) 
+    }
+
+    GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text(text = "Daily Sales Target", color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
+                    Text(text = if (dailyTarget > 0) formatter.format(dailyTarget) else "Belum Ditetapkan", color = bodyColor, fontSize = 20.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+                }
+                Text(text = "${(progress * 100).toInt()}%", color = bodyColor, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Box(modifier = Modifier.fillMaxWidth().height(8.dp).background(bodyColor.copy(alpha = 0.1f), CircleShape)) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val progressWidth = size.width * progress
+                    if (progressWidth > 0) {
+                        drawLine(
+                            color = progressColor,
+                            start = Offset(0f, size.height / 2),
+                            end = Offset(progressWidth, size.height / 2),
+                            strokeWidth = size.height,
+                            cap = StrokeCap.Round
+                        )
+                    }
+                }
+            }
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "Today: ${formatter.format(todayRevenue)}", color = bodyColor.copy(alpha = 0.8f), fontSize = 14.sp)
+                
+                if (progress >= 1.0f && !isAchievedMarked) {
+                    androidx.compose.material3.Button(
+                        onClick = {
+                            isAchievedMarked = true
+                            prefs.edit().putBoolean("DAILY_ACHIEVED_$todayStr", true).apply()
+                            onGoalAchieved()
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80)),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text("Mark Achieved!", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                } else if (isAchievedMarked) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Achieved", tint = Color(0xFF4ADE80), modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(text = "Target Achieved!", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                }
+            }
         }
     }
 }

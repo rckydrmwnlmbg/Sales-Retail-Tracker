@@ -14,6 +14,7 @@ data class ActivityEntity(
     val productId: Int? = null,
     val price: Double? = null,
     val creditedToId: Int? = null,
+    val creditedFromId: Int? = null,
     
     // Interest Info
     val customerType: String? = null,

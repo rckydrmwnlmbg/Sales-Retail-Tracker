@@ -6,7 +6,7 @@ import com.google.gson.Gson
 
 object ScanBrochureUseCase {
 
-    suspend fun scanBrochure(imageBitmap: Bitmap): ProductScanResult {
+    suspend fun scanBrochure(imageBitmap: Bitmap, apiKey: String): ProductScanResult {
         val outputStream = java.io.ByteArrayOutputStream()
         imageBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
         val byteArray = outputStream.toByteArray()
@@ -42,7 +42,7 @@ object ScanBrochureUseCase {
         """.trimIndent()
 
         try {
-            val responseText = OpenRouterClient.queryOpenRouterMultimodal(prompt, base64String)
+            val responseText = OpenRouterClient.queryOpenRouterMultimodal(prompt, base64String, apiKey)
             val jsonText = responseText.trim()
             return parseProductScanResult(jsonText)
         } catch (e: Throwable) {

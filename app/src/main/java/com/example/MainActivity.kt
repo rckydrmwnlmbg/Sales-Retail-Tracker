@@ -1,7 +1,7 @@
 package com.example
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -51,7 +51,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
 val LocalHazeState = staticCompositionLocalOf<HazeState> { error("No HazeState") }
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
@@ -92,6 +92,10 @@ class MainActivity : ComponentActivity() {
         )
 
         var showLogBottomSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+        androidx.activity.compose.BackHandler(enabled = showLogBottomSheet) {
+            showLogBottomSheet = false
+        }
 
         Box(modifier = Modifier.fillMaxSize()) {
           Box(
@@ -204,7 +208,7 @@ class MainActivity : ComponentActivity() {
                   composable(Screen.Log.route) { com.example.ui.screens.log.LogActivityScreen(mainViewModel) }
                   composable(Screen.Analytics.route) { com.example.ui.screens.analytics.AnalyticsScreen(mainViewModel) }
                   composable(Screen.Journal.route) { com.example.ui.screens.journal.JournalScreen(mainViewModel) }
-                  composable(Screen.Export.route) { com.example.ui.screens.export.ExportScreen(onBack = { navController.popBackStack() }) }
+                  composable(Screen.Export.route) { com.example.ui.screens.export.ExportScreen(mainViewModel, onBack = { navController.popBackStack() }) }
                   composable(Screen.Profile.route) { com.example.ui.screens.ProfileScreen(mainViewModel, onNavigate = { navController.navigate(it) }) }
                   composable(Screen.ManageProducts.route) { ManageProductsScreen(mainViewModel, onBack = { navController.popBackStack() }) }
                   composable(Screen.ManageColleagues.route) { ManageColleaguesScreen(mainViewModel, onBack = { navController.popBackStack() }) }
@@ -289,7 +293,7 @@ class MainActivity : ComponentActivity() {
                               }
                           },
                           onLogClick = {
-                              showLogBottomSheet = true
+                              showLogBottomSheet = !showLogBottomSheet
                           },
                           hazeState = LocalHazeState.current
                       )

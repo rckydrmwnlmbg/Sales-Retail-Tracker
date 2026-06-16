@@ -26,10 +26,16 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertActivity(activity: ActivityEntity)
+    
+    @Delete
+    suspend fun deleteActivity(activity: ActivityEntity)
 
     // Goals
     @Query("SELECT * FROM goals WHERE monthYear = :monthYear")
     fun getGoalByMonth(monthYear: String): Flow<GoalEntity?>
+    
+    @Query("SELECT * FROM goals")
+    fun getAllGoals(): Flow<List<GoalEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGoal(goal: GoalEntity)

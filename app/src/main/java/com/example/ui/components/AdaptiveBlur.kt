@@ -102,14 +102,7 @@ fun AdaptiveGlassCard(
         }
         .border(
             width = 1.dp,
-            brush = Brush.linearGradient(
-                colors = listOf(
-                    androidx.compose.material3.MaterialTheme.colorScheme.outline,
-                    androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant
-                ),
-                start = Offset(0f, 0f),
-                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-            ),
+            color = if (isSystemInDarkTheme()) Color.White.copy(0.12f) else Color.Black.copy(0.06f),
             shape = RoundedCornerShape(16.dp)
         )
 

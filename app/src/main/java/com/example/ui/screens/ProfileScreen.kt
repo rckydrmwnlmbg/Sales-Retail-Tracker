@@ -54,6 +54,9 @@ import com.example.ui.components.CollapsibleHeaderContent
 import com.example.LocalHazeState
 import dev.chrisbanes.haze.HazeState
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+
 private fun lerp(start: Float, stop: Float, fraction: Float): Float {
     return start + fraction * (stop - start)
 }
@@ -67,6 +70,10 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
     val products by viewModel.allProducts.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    val supabaseUrl by viewModel.supabaseUrl.collectAsState()
+    val supabaseKey by viewModel.supabaseKey.collectAsState()
 
     val themeMode by viewModel.themeMode.collectAsState()
     val isDarkTheme = when(themeMode) {
@@ -80,6 +87,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
     val scrollState = rememberLazyListState()
     val localHazeState = com.example.LocalHazeState.current
     val firstClockInTime by viewModel.firstClockInTime.collectAsState()
+    val userName by viewModel.userName.collectAsState()
     val jobTitle by viewModel.jobTitle.collectAsState()
     val workLocation by viewModel.workLocation.collectAsState()
     val shiftPagiTime by viewModel.shiftPagiTime.collectAsState()
@@ -87,7 +95,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
 
     var showEditProfileDialog by remember { mutableStateOf(false) }
 
-        val headerContent = remember(firstClockInTime, jobTitle, workLocation, shiftPagiTime, shiftSiangTime) {
+        val headerContent = remember(firstClockInTime, userName, jobTitle, workLocation, shiftPagiTime, shiftSiangTime) {
         object : CollapsibleHeaderContent {
             override val expandedHeight = 220.dp
             override val collapsedHeight = 136.dp
@@ -99,11 +107,13 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                         collapseProgress = collapseProgress,
                         hazeState = localHazeState,
                         firstClockIn = firstClockInTime ?: "Belum ada",
+                        userName = userName,
                         jobTitle = jobTitle,
                         workLocation = workLocation
                     )
                     ProfileHeaderCollapsed(
                         collapseProgress = collapseProgress,
+                        userName = userName,
                         jobTitle = jobTitle
                     )
                 }
@@ -115,7 +125,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
         Scaffold(
             containerColor = Color.Transparent,
             snackbarHost = { 
-                Box(modifier = Modifier.padding(bottom = 200.dp)) {
+                Box(modifier = Modifier.padding(bottom = 100.dp)) {
                     SnackbarHost(snackbarHostState)
                 }
             }
@@ -204,7 +214,16 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                     title = "Offline Sync",
                     subtitle = "Sync offline sales entries back to server",
                     onClick = { 
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Rules updated: Syncing pending entries to server.") }
+                        coroutineScope.launch { 
+                            try {
+                                snackbarHostState.showSnackbar("Memulai sinkronisasi offline...")
+                                val activities = viewModel.allActivities.value
+                                com.example.logic.SupabaseSyncHelper.syncOfflineData(supabaseUrl, supabaseKey, activities)
+                                snackbarHostState.showSnackbar("Data offline berhasil disinkronisasi dengan Supabase")
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("Gagal: ${e.message}")
+                            }
+                        }
                     }
                 )
             }
@@ -215,21 +234,25 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                     title = "Cloud Backup",
                     subtitle = "Stores backup of all sales data safely",
                     onClick = { 
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Backup started... Data secured in cloud.") }
+                        coroutineScope.launch { 
+                            try {
+                                snackbarHostState.showSnackbar("Membuat cadangan ke cloud...")
+                                val products = viewModel.allProducts.value
+                                val activities = viewModel.allActivities.value
+                                val goals = viewModel.allGoals.value
+                                val colleagues = viewModel.allColleagues.value
+                                com.example.logic.SupabaseSyncHelper.backupDataToCloud(
+                                    supabaseUrl, supabaseKey, products, activities, goals, colleagues
+                                )
+                                snackbarHostState.showSnackbar("Backup selesai. Data telah diamankan di Supabase.")
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("Gagal: ${e.message}")
+                            }
+                        }
                     }
                 )
             }
-            item {
-                SettingItemCard(
-                    hazeState = localHazeState,
-                    icon = Icons.Outlined.Lock,
-                    title = "Security & Privacy",
-                    subtitle = "Protect sales numbers with PIN/Fingerprint",
-                    onClick = { 
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Biometric lock enforced for analytics.") }
-                    }
-                )
-            }
+            // Security feature item removed since it was just a mock UI
             item {
                 val themeName = if (isDarkTheme) "Cosmic Dark" else "Stellar Bright"
                 SettingItemCard(
@@ -316,18 +339,24 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
     )
     
     val openRouterApiKey by viewModel.openRouterApiKey.collectAsState()
+    val supabaseUrl by viewModel.supabaseUrl.collectAsState()
+    val supabaseKey by viewModel.supabaseKey.collectAsState()
     
     if (showEditProfileDialog) {
         EditProfileDialog(
+            userName = userName,
             jobTitle = jobTitle,
             workLocation = workLocation,
             shiftPagi = shiftPagiTime,
             shiftSiang = shiftSiangTime,
             apiKey = openRouterApiKey,
+            supabaseUrl = supabaseUrl,
+            supabaseKey = supabaseKey,
             onDismiss = { showEditProfileDialog = false },
-            onSave = { job, loc, pagi, siang, key ->
-                viewModel.updateProfile(job, loc, pagi, siang)
+            onSave = { name, job, loc, pagi, siang, key, supUrl, supKey ->
+                viewModel.updateProfile(name, job, loc, pagi, siang)
                 viewModel.updateOpenRouterApiKey(key)
+                viewModel.updateSupabaseCredentials(supUrl, supKey)
                 showEditProfileDialog = false
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar("Profil berhasil diperbarui")
@@ -401,6 +430,7 @@ fun ProfileHeaderExpanded(
     collapseProgress: Float,
     hazeState: HazeState,
     firstClockIn: String,
+    userName: String,
     jobTitle: String,
     workLocation: String
 ) {
@@ -427,7 +457,7 @@ fun ProfileHeaderExpanded(
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        text = "👤 Ricky",
+                        text = "👤 $userName",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -502,6 +532,7 @@ fun ProfileHeaderExpanded(
 @Composable
 fun ProfileHeaderCollapsed(
     collapseProgress: Float,
+    userName: String,
     jobTitle: String
 ) {
     if (collapseProgress > 0.5f) {
@@ -517,7 +548,7 @@ fun ProfileHeaderCollapsed(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "👤 Ricky",
+                text = "👤 $userName",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = androidx.compose.ui.graphics.Color.White
@@ -534,19 +565,25 @@ fun ProfileHeaderCollapsed(
 
 @Composable
 fun EditProfileDialog(
+    userName: String,
     jobTitle: String,
     workLocation: String,
     shiftPagi: String,
     shiftSiang: String,
     apiKey: String,
+    supabaseUrl: String,
+    supabaseKey: String,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, String, String) -> Unit
+    onSave: (String, String, String, String, String, String, String, String) -> Unit
 ) {
+    var name by remember { mutableStateOf(userName) }
     var job by remember { mutableStateOf(jobTitle) }
     var location by remember { mutableStateOf(workLocation) }
     var pagi by remember { mutableStateOf(shiftPagi) }
     var siang by remember { mutableStateOf(shiftSiang) }
     var apiKeyValue by remember { mutableStateOf(apiKey) }
+    var sUrl by remember { mutableStateOf(supabaseUrl) }
+    var sKey by remember { mutableStateOf(supabaseKey) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -554,7 +591,17 @@ fun EditProfileDialog(
             Text("Edit Profil", style = MaterialTheme.typography.titleLarge)
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nama Lengkap") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 OutlinedTextField(
                     value = job,
                     onValueChange = { job = it },
@@ -590,11 +637,25 @@ fun EditProfileDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedTextField(
+                    value = sUrl,
+                    onValueChange = { sUrl = it },
+                    label = { Text("Supabase URL") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = sKey,
+                    onValueChange = { sKey = it },
+                    label = { Text("Supabase Key") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(job, location, pagi, siang, apiKeyValue) }
+                onClick = { onSave(name, job, location, pagi, siang, apiKeyValue, sUrl, sKey) }
             ) {
                 Text("Simpan")
             }

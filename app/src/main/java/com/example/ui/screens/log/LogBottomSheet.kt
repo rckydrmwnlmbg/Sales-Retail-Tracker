@@ -1,5 +1,9 @@
 package com.example.ui.screens.log
 
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,6 +58,19 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
     var note by remember { mutableStateOf("") }
     var selectedProduct by remember { mutableStateOf<Int?>(null) }
     var creditedToId by remember { mutableStateOf<Int?>(null) }
+    var creditedFromId by remember { mutableStateOf<Int?>(null) }
+    
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val data = result.data
+            val matches = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            if (!matches.isNullOrEmpty()) {
+                note = (if (note.isEmpty()) "" else "$note ") + matches[0]
+            }
+        }
+    }
     
     val coroutineScope = rememberCoroutineScope()
     val scrollState = androidx.compose.foundation.rememberScrollState()
@@ -166,7 +183,8 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
                         value = if (creditedToId == null) "Me (Saya Pribadi)" else colleagues.find { it.id == creditedToId }?.name ?: "",
                         onValueChange = {}, readOnly = true, label = { Text("Credit To") },
                         modifier = Modifier.fillMaxWidth().menuAnchor(), colors = fieldColors, shape = RoundedCornerShape(12.dp),
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = colExpanded) }
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = colExpanded) },
+                        enabled = creditedFromId == null
                     )
                     ExposedDropdownMenu(expanded = colExpanded, onDismissRequest = { colExpanded = false }) {
                         DropdownMenuItem(text = { Text("Me (Saya Pribadi)") }, onClick = { creditedToId = null; colExpanded = false })
@@ -176,10 +194,44 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                
+                var fromExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(expanded = fromExpanded, onExpandedChange = { fromExpanded = it }) {
+                    OutlinedTextField(
+                        value = if (creditedFromId == null) "Me (Saya Pribadi)" else colleagues.find { it.id == creditedFromId }?.name ?: "",
+                        onValueChange = {}, readOnly = true, label = { Text("Sale Made By (Credited From)") },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(), colors = fieldColors, shape = RoundedCornerShape(12.dp),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = fromExpanded) },
+                        enabled = creditedToId == null
+                    )
+                    ExposedDropdownMenu(expanded = fromExpanded, onDismissRequest = { fromExpanded = false }) {
+                        DropdownMenuItem(text = { Text("Me (Saya Pribadi)") }, onClick = { creditedFromId = null; fromExpanded = false })
+                        colleagues.forEach { col ->
+                            DropdownMenuItem(text = { Text(col.name) }, onClick = { creditedFromId = col.id; fromExpanded = false })
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
             OutlinedTextField(
                 value = note, onValueChange = { note = it }, label = { Text("Catatan Detail") },
-                modifier = Modifier.fillMaxWidth().height(80.dp), colors = fieldColors, shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.fillMaxWidth().height(120.dp), colors = fieldColors, shape = RoundedCornerShape(12.dp),
+                trailingIcon = {
+                    IconButton(onClick = {
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().language)
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Bicara sekarang...")
+                        }
+                        try {
+                            speechLauncher.launch(intent)
+                        } catch (e: Exception) {
+                            // no speech to text available
+                        }
+                    }) {
+                        Icon(imageVector = Icons.Outlined.Mic, contentDescription = "Voice Input", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -202,6 +254,7 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
                                 productId = selectedProduct,
                                 price = price.toDoubleOrNull() ?: 0.0,
                                 creditedToId = creditedToId,
+                                creditedFromId = creditedFromId,
                                 notes = note
                             )
                         )

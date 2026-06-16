@@ -74,12 +74,7 @@ fun GlassCard(
             }
             .border(
                 width = 1.dp,
-                brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                    )
-                ),
+                color = if (androidx.compose.foundation.isSystemInDarkTheme()) Color.White.copy(0.12f) else Color.Black.copy(0.06f),
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
