@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.hazeSource
 import androidx.compose.ui.platform.LocalContext
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.AdaptiveGlassCard
@@ -68,13 +69,11 @@ data class ShiftInfo(
 
 @Composable
 fun SectionHeader(title: String) {
-    val bodyColor = MaterialTheme.colorScheme.onBackground
     Text(
-        text = title,
-        color = bodyColor.copy(alpha = 0.5f),
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.padding(bottom = 8.dp)
+        text = title.uppercase(Locale.getDefault()),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 0.dp)
     )
 }
 
@@ -127,42 +126,53 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = scrollState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             contentPadding = PaddingValues(
-                start = 24.dp,
-                end = 24.dp,
-                top = headerContent.expandedHeight + 16.dp,
+                start = com.example.ui.theme.AppSpacing.lg,
+                end = com.example.ui.theme.AppSpacing.lg,
+                top = headerContent.expandedHeight + com.example.ui.theme.AppSpacing.lg,
                 bottom = 200.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.xxl)
         ) {
             item {
-                SectionHeader("Today's Snapshot")
-                SnapshotGrid(viewModel)
+                Column {
+                    SectionHeader("Today's Snapshot")
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                    SnapshotGrid(viewModel)
+                }
             }
             
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader("Daily Goals")
-                DailyGoalSection(viewModel, onGoalAchieved = { triggerParticles = true })
+                Column {
+                    SectionHeader("Daily Goals")
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                    DailyGoalSection(viewModel, onGoalAchieved = { triggerParticles = true })
+                }
             }
             
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader("Target Progress")
-                ProgressSection(viewModel)
+                Column {
+                    SectionHeader("Target Progress")
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                    ProgressSection(viewModel)
+                }
             }
 
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader("AI Coach")
-                AiCoachPromoCard(onNavigate)
+                Column {
+                    SectionHeader("AI Coach")
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                    AiCoachPromoCard(onNavigate)
+                }
             }
-
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader("Attribution Summary")
-                AttributionSection(viewModel)
+                Column {
+                    SectionHeader("Attribution Summary")
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                    AttributionSection(viewModel)
+                }
             }
         }
 
@@ -192,25 +202,25 @@ fun HomeHeaderExpanded(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = com.example.ui.theme.AppSpacing.lg)
             .padding(top = 52.dp) // status bar space
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)
         ) {
             AdaptiveGlassCard(
                 hazeState = hazeState,
                 modifier = Modifier
                     .weight(1.5f)
-                    .height(96.dp)
+                    .height(90.dp)
                     .graphicsLayer {
                         alpha = (1f - collapseProgress * 2f).coerceIn(0f, 1f)
                         scaleX = lerp(1f, 0.95f, collapseProgress)
                         scaleY = scaleX
                     }
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+                Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
                     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
                     val greeting = when (hour) {
                         in 6..11  -> "Selamat pagi,"
@@ -221,14 +231,13 @@ fun HomeHeaderExpanded(
                     }
                     Text(
                         text = greeting,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(com.example.ui.theme.AppSpacing.xs))
                     Text(
                         text = "$userName 👋",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -238,7 +247,7 @@ fun HomeHeaderExpanded(
                 hazeState = hazeState,
                 modifier = Modifier
                     .weight(1.1f)
-                    .height(96.dp)
+                    .height(90.dp)
                     .graphicsLayer {
                         alpha = (1f - collapseProgress * 2f).coerceIn(0f, 1f)
                         scaleX = lerp(1f, 0.95f, collapseProgress)
@@ -248,7 +257,7 @@ fun HomeHeaderExpanded(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(10.dp),
+                        .padding(com.example.ui.theme.AppSpacing.lg),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -256,26 +265,25 @@ fun HomeHeaderExpanded(
                             imageVector = Icons.Outlined.AccessTime,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(14.dp)
                         )
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(com.example.ui.theme.AppSpacing.xs))
                         Text(
                             text = shiftInfo.name,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                     Text(
                         text = shiftInfo.timeRange,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(26.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(com.example.ui.theme.AppSpacing.sm))
                             .background(
                                 if (shiftInfo.isClockedIn)
                                     MaterialTheme.colorScheme.error.copy(0.2f)
@@ -288,7 +296,7 @@ fun HomeHeaderExpanded(
                                     MaterialTheme.colorScheme.error.copy(0.5f)
                                 else
                                     MaterialTheme.colorScheme.primary.copy(0.5f),
-                                RoundedCornerShape(8.dp)
+                                RoundedCornerShape(com.example.ui.theme.AppSpacing.sm)
                             )
                             .clickable {
                                 if (shiftInfo.isClockedIn) onClockOut()
@@ -299,8 +307,7 @@ fun HomeHeaderExpanded(
                         Text(
                             text = if (shiftInfo.isClockedIn)
                                 "Clock Out" else "Clock In",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.labelMedium,
                             color = if (shiftInfo.isClockedIn)
                                 MaterialTheme.colorScheme.error
                             else
@@ -311,13 +318,13 @@ fun HomeHeaderExpanded(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(com.example.ui.theme.AppSpacing.sm))
 
         AdaptiveGlassCard(
             hazeState = hazeState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(36.dp)
+                .height(32.dp)
                 .graphicsLayer {
                     alpha = (1f - collapseProgress * 3f).coerceIn(0f, 1f)
                     scaleX = lerp(1f, 0.95f, collapseProgress)
@@ -338,7 +345,7 @@ fun HomeHeaderExpanded(
                 }
                 Text(
                     text = formattedDate,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -357,7 +364,7 @@ fun HomeHeaderCollapsed(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = com.example.ui.theme.AppSpacing.xxl)
                 .padding(top = 48.dp, bottom = 28.dp)
                 .graphicsLayer {
                     alpha = ((collapseProgress - 0.5f) * 2f).coerceIn(0f, 1f)
@@ -365,11 +372,10 @@ fun HomeHeaderCollapsed(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.xs)) {
                 Text(
                     text = "Ricky 👋",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
                     color = Color.White
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -377,13 +383,12 @@ fun HomeHeaderCollapsed(
                         imageVector = Icons.Outlined.AccessTime,
                         contentDescription = null,
                         tint = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(com.example.ui.theme.AppSpacing.xs))
                     Text(
                         text = "${shiftInfo.name} · ${shiftInfo.timeRange}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.8f)
                     )
                 }
@@ -391,7 +396,7 @@ fun HomeHeaderCollapsed(
             
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(com.example.ui.theme.AppSpacing.sm))
                     .background(
                         if (shiftInfo.isClockedIn)
                             MaterialTheme.colorScheme.error.copy(0.15f)
@@ -402,13 +407,12 @@ fun HomeHeaderCollapsed(
                         if (shiftInfo.isClockedIn) onClockOut()
                         else onClockIn()
                     }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                    .padding(horizontal = com.example.ui.theme.AppSpacing.xl, vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = if (shiftInfo.isClockedIn) "Clock Out" else "Clock In",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelMedium,
                     color = if (shiftInfo.isClockedIn)
                         MaterialTheme.colorScheme.error
                     else
@@ -433,10 +437,18 @@ fun SnapshotGrid(viewModel: MainViewModel) {
     val targetText = formatter.format(personalTarget)
     val progress = if (personalTarget > 0) (revenue / personalTarget).coerceAtMost(1.0) else 0.0
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    var showAnimation by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { showAnimation = true }
+    val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (showAnimation) progress.toFloat() else 0f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 1500, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "progress_circular"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
         GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                modifier = Modifier.fillMaxWidth().padding(com.example.ui.theme.AppSpacing.lg),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(modifier = Modifier.size(80.dp), contentAlignment = Alignment.Center) {
@@ -451,40 +463,89 @@ fun SnapshotGrid(viewModel: MainViewModel) {
                         drawArc(
                             brush = PrimaryGradient,
                             startAngle = -90f,
-                            sweepAngle = 360f * progress.toFloat(),
+                            sweepAngle = 360f * animatedProgress,
                             useCenter = false,
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "${(progress * 100).toInt()}%", color = bodyColor, fontSize = 20.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+                        Text(
+                            text = "${(animatedProgress * 100).toInt()}%", 
+                            style = MaterialTheme.typography.titleLarge,
+                            color = bodyColor
+                        )
                     }
                 }
-                Spacer(modifier = Modifier.width(20.dp))
+                Spacer(modifier = Modifier.width(com.example.ui.theme.AppSpacing.xl))
                 Column {
-                    Text(text = "Daily Sales Goal", color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
-                    Text(text = formatter.format(revenue), color = bodyColor, fontSize = 24.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
-                    Text(text = "of $targetText target", color = bodyColor.copy(alpha = 0.4f), fontSize = 12.sp, fontWeight = FontWeight.Light, modifier = Modifier.padding(top = 4.dp))
+                    Text(
+                        text = "DAILY REVENUE", 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.xs))
+                    Text(
+                        text = formatter.format(revenue), 
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = bodyColor
+                    )
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.xs))
+                    Text(
+                        text = "of $targetText target", 
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
                 }
             }
         }
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
             GlassmorphicCard(modifier = Modifier.weight(1f)) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Icon(imageVector = Icons.Outlined.ReceiptLong, contentDescription = "Transactions", tint = Color(0xFF6C63FF), modifier = Modifier.size(28.dp))
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "$transactions", color = bodyColor, fontSize = 28.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
-                    Text(text = "Transactions", color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
+                Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
+                    Icon(
+                        imageVector = Icons.Outlined.ReceiptLong, 
+                        contentDescription = "Transactions", 
+                        tint = MaterialTheme.colorScheme.primary.copy(0.7f), 
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                    Text(
+                        text = "$transactions", 
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Transactions", 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
                 }
             }
 
             GlassmorphicCard(modifier = Modifier.weight(1f)) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Icon(imageVector = Icons.Outlined.LocalMall, contentDescription = "Non-Sale", tint = Color(0xFFFBBF24), modifier = Modifier.size(28.dp))
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "$interactions", color = bodyColor, fontSize = 28.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
-                    Text(text = "Interactions", color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
+                Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
+                    Icon(
+                        imageVector = Icons.Outlined.LocalMall, 
+                        contentDescription = "Non-Sale", 
+                        tint = MaterialTheme.colorScheme.primary.copy(0.7f), 
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                    Text(
+                        text = "$interactions", 
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Interactions", 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
                 }
             }
         }
@@ -499,28 +560,52 @@ fun ProgressSection(viewModel: MainViewModel) {
     val goal by viewModel.currentGoal.collectAsState()
     val personalTarget = goal?.personalTarget ?: 0.0
     val progress = if (personalTarget > 0) (revenue / personalTarget).coerceAtMost(1.0).toFloat() else 0f
+    
+    var showAnimation by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { showAnimation = true }
+    val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (showAnimation) progress else 0f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 1500, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "progress"
+    )
+    
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
     val progressColor = when {
-        progress < 0.5f  -> Color(0xFFFF6B6B)  // danger red
-        progress < 0.8f  -> Color(0xFFFFD93D)  // amber
-        progress < 1.0f  -> MaterialTheme.colorScheme.primary  // biru
+        animatedProgress < 0.5f  -> Color(0xFFFF6B6B)  // danger red
+        animatedProgress < 0.8f  -> Color(0xFFFFD93D)  // amber
+        animatedProgress < 1.0f  -> MaterialTheme.colorScheme.primary  // biru
         else             -> Color(0xFF4ADE80)  // success mint
     }
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg), verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text(text = "Monthly Personal Target", color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
-                    Text(text = formatter.format(personalTarget), color = bodyColor, fontSize = 20.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+                    Text(
+                        text = "MONTHLY PERSONAL TARGET", 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.xs))
+                    Text(
+                        text = formatter.format(personalTarget), 
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = bodyColor
+                    )
                 }
-                Text(text = "${(progress * 100).toInt()}%", color = bodyColor, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "${(animatedProgress * 100).toInt()}%", 
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = bodyColor
+                )
             }
 
             Box(modifier = Modifier.fillMaxWidth().height(8.dp).background(bodyColor.copy(alpha = 0.1f), CircleShape)) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val progressWidth = size.width * progress
+                    val progressWidth = size.width * animatedProgress
                     if (progressWidth > 0) {
                         drawLine(
                             color = progressColor,
@@ -547,7 +632,7 @@ fun AttributionSection(viewModel: MainViewModel) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg), verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
             AttributionStat("Actual Revenue", formatter.format(actualRevenue), Color(0xFF4ADE80))
             AttributionStat("Given to Team", formatter.format(givenRevenue), Color(0xFFFBBF24))
             AttributionStat("Official Target Achieved", formatter.format(officialRevenue), Color(0xFF6C63FF))
@@ -564,8 +649,17 @@ fun AttributionStat(label: String, value: String, valueColor: Color) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, color = bodyColor.copy(alpha = 0.8f), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-        Text(text = value, color = valueColor, fontSize = 16.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+        Text(
+            text = label, 
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White.copy(alpha = 0.6f)
+        )
+        Text(
+            text = value, 
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
     }
 }
 
@@ -574,17 +668,17 @@ fun AiCoachPromoCard(onNavigate: (String) -> Unit) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth().clickable { onNavigate("coach") }) {
-        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth().padding(com.example.ui.theme.AppSpacing.lg), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF6C63FF).copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = Icons.Outlined.AutoAwesome, contentDescription = "AI Coach", tint = Color(0xFF6C63FF), modifier = Modifier.size(24.dp))
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(com.example.ui.theme.AppSpacing.lg))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Your AI Coach", color = bodyColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = "Get daily coaching and shift summaries.", color = bodyColor.copy(alpha = 0.6f), fontSize = 13.sp)
+                Text(text = "Your AI Coach", style = MaterialTheme.typography.titleMedium, color = bodyColor, fontWeight = FontWeight.Bold)
+                Text(text = "Get daily coaching and shift summaries.", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.6f))
             }
             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Go", tint = bodyColor.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
         }
@@ -606,27 +700,51 @@ fun DailyGoalSection(viewModel: MainViewModel, onGoalAchieved: () -> Unit) {
     var isAchievedMarked by remember { mutableStateOf(prefs.getBoolean("DAILY_ACHIEVED_$todayStr", false)) }
     
     val progress = if (dailyTarget > 0) (todayRevenue / dailyTarget).coerceAtMost(1.0).toFloat() else 0f
+    
+    var showAnimation by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { showAnimation = true }
+    val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (showAnimation) progress else 0f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 1500, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "progress"
+    )
+    
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
     
     val progressColor = when {
-        progress < 0.5f  -> Color(0xFFFF6B6B) 
-        progress < 1.0f  -> Color(0xFFFFD93D) 
+        animatedProgress < 0.5f  -> Color(0xFFFF6B6B) 
+        animatedProgress < 1.0f  -> Color(0xFFFFD93D) 
         else             -> Color(0xFF4ADE80) 
     }
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg), verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text(text = "Daily Sales Target", color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
-                    Text(text = if (dailyTarget > 0) formatter.format(dailyTarget) else "Belum Ditetapkan", color = bodyColor, fontSize = 20.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+                    Text(
+                        text = "DAILY SALES TARGET", 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.xs))
+                    Text(
+                        text = if (dailyTarget > 0) formatter.format(dailyTarget) else "Belum Ditetapkan", 
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = bodyColor
+                    )
                 }
-                Text(text = "${(progress * 100).toInt()}%", color = bodyColor, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "${(animatedProgress * 100).toInt()}%", 
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = bodyColor
+                )
             }
 
             Box(modifier = Modifier.fillMaxWidth().height(8.dp).background(bodyColor.copy(alpha = 0.1f), CircleShape)) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val progressWidth = size.width * progress
+                    val progressWidth = size.width * animatedProgress
                     if (progressWidth > 0) {
                         drawLine(
                             color = progressColor,
@@ -640,7 +758,11 @@ fun DailyGoalSection(viewModel: MainViewModel, onGoalAchieved: () -> Unit) {
             }
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Today: ${formatter.format(todayRevenue)}", color = bodyColor.copy(alpha = 0.8f), fontSize = 14.sp)
+                Text(
+                    text = "Today: ${formatter.format(todayRevenue)}", 
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
                 
                 if (progress >= 1.0f && !isAchievedMarked) {
                     androidx.compose.material3.Button(
@@ -650,7 +772,7 @@ fun DailyGoalSection(viewModel: MainViewModel, onGoalAchieved: () -> Unit) {
                             onGoalAchieved()
                         },
                         colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF4ADE80)),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        contentPadding = PaddingValues(horizontal = com.example.ui.theme.AppSpacing.md, vertical = 6.dp),
                         modifier = Modifier.height(36.dp)
                     ) {
                         Text("Mark Achieved!", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -659,7 +781,7 @@ fun DailyGoalSection(viewModel: MainViewModel, onGoalAchieved: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Achieved", tint = Color(0xFF4ADE80), modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(text = "Target Achieved!", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(text = "Target Achieved!", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }

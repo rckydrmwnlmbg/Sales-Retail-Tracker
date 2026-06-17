@@ -138,8 +138,13 @@ fun BottomNavBar(
                             state = hazeState,
                             style = HazeStyle(
                                 backgroundColor = Color.Transparent,
-                                tint = HazeTint(Color.Black.copy(alpha = 0.10f)),
-                                blurRadius = 16.dp
+                                tint = HazeTint(
+                                    if (androidx.compose.foundation.isSystemInDarkTheme()) 
+                                        Color.Black.copy(alpha = 0.25f) 
+                                    else 
+                                        Color.White.copy(alpha = 0.5f)
+                                ),
+                                blurRadius = 24.dp
                             )
                         )
                     } else {

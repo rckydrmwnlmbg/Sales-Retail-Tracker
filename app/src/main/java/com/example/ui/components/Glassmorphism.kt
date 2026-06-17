@@ -31,19 +31,18 @@ fun Modifier.glassmorphism(
 
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background == Color(0xFF060810)
     return this
-        .shadow(elevation = 12.dp, shape = shape, spotColor = shadowColor, ambientColor = shadowColor)
         .clip(shape)
         .hazeEffect(
             state = LocalHazeState.current,
             style = HazeStyle(
-                backgroundColor = Color.White.copy(alpha = baseAlpha * 1.5f),
-                tint = HazeTint(Color.White.copy(alpha = baseAlpha * 1.5f)),
-                blurRadius = 24.dp
+                backgroundColor = Color.Transparent,
+                tint = HazeTint(Color.White.copy(alpha = 0.05f)),
+                blurRadius = 12.dp
             )
         )
         .border(
-            width = borderWidth,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f),
+            width = 1.dp,
+            color = if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.2f),
             shape = shape
         )
 }
@@ -55,42 +54,23 @@ fun GlassCard(
 ) {
     Box(
         modifier = modifier
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(16.dp),
-                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-            )
             .clip(RoundedCornerShape(16.dp))
             .let {
                 it.hazeEffect(
                     state = LocalHazeState.current,
                     style = HazeStyle(
-                        backgroundColor = Color.White.copy(alpha = 0.15f),
-                        tint = HazeTint(Color.White.copy(alpha = 0.15f)),
-                        blurRadius = 24.dp
+                        backgroundColor = Color.Transparent,
+                        tint = HazeTint(Color.White.copy(alpha = 0.05f)),
+                        blurRadius = 12.dp
                     )
                 )
             }
             .border(
                 width = 1.dp,
-                color = if (androidx.compose.foundation.isSystemInDarkTheme()) Color.White.copy(0.12f) else Color.Black.copy(0.06f),
+                color = if (androidx.compose.foundation.isSystemInDarkTheme()) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    androidx.compose.ui.graphics.Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.4f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
         content()
     }
 }

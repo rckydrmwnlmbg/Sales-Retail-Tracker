@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.hazeSource
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.AdaptiveGlassCard
 import com.example.ui.components.CollapsibleBentoHeader
@@ -108,14 +109,15 @@ fun AnalyticsScreen(viewModel: MainViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = scrollState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             contentPadding = PaddingValues(
-                start = 24.dp,
-                end = 24.dp,
-                top = headerContent.expandedHeight + 16.dp,
+                start = com.example.ui.theme.AppSpacing.lg,
+                end = com.example.ui.theme.AppSpacing.lg,
+                top = headerContent.expandedHeight + com.example.ui.theme.AppSpacing.lg,
                 bottom = 200.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.xxl)
         ) {
             item {
                 SectionTitle("REVENUE TREND")
@@ -168,15 +170,13 @@ fun AnalyticsScreen(viewModel: MainViewModel) {
 
 @Composable
 fun SectionTitle(title: String) {
-    val bodyColor = MaterialTheme.colorScheme.onBackground
     Text(
-        text = title,
-        color = bodyColor.copy(alpha = 0.5f),
-        letterSpacing = 0.5.sp,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+        text = title.uppercase(Locale.getDefault()),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 0.dp)
     )
+    Spacer(Modifier.height(com.example.ui.theme.AppSpacing.sm))
 }
 
 @Composable
@@ -381,16 +381,30 @@ fun RevenueChart(activities: List<com.example.data.local.entity.ActivityEntity>,
     }
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth().height(250.dp)) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(periodName, color = bodyColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light)
+                Text(
+                    text = periodName.uppercase(Locale.getDefault()), 
+                    style = MaterialTheme.typography.labelMedium,
+                    color = bodyColor.copy(alpha = 0.6f)
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.TrendingUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(if(dailyRevenue.size > 1) "+Active" else "Tracking", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.width(com.example.ui.theme.AppSpacing.xs))
+                    Text(
+                        text = if(dailyRevenue.size > 1) "+Active" else "Tracking", 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
-            Text(formatter.format(revenue), color = bodyColor, fontSize = 24.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"), modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
+            Text(
+                text = formatter.format(revenue), 
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = bodyColor,
+                modifier = Modifier.padding(top = com.example.ui.theme.AppSpacing.xs, bottom = com.example.ui.theme.AppSpacing.xl)
+            )
 
             val primaryColor = MaterialTheme.colorScheme.primary
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -443,17 +457,37 @@ fun MetricsGrid(activities: List<com.example.data.local.entity.ActivityEntity>) 
     val avg = if (salesCount > 0) rev / salesCount else 0.0
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
         GlassmorphicCard(modifier = Modifier.weight(1f)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Closing Rate", color = bodyColor.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Light)
-                Text(String.format("%.1f%%", conv), color = bodyColor, fontSize = 24.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"), modifier = Modifier.padding(top = 8.dp))
+            Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
+                Text(
+                    text = "Closing Rate", 
+                    style = MaterialTheme.typography.labelMedium,
+                    color = bodyColor.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                Text(
+                    text = String.format(Locale.getDefault(), "%.1f%%", conv), 
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = bodyColor
+                )
             }
         }
         GlassmorphicCard(modifier = Modifier.weight(1f)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Avg Value", color = bodyColor.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Light)
-                Text(formatter.format(avg), color = bodyColor, fontSize = 20.sp, fontWeight = FontWeight.Bold, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"), modifier = Modifier.padding(top = 8.dp))
+            Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
+                Text(
+                    text = "Avg Value", 
+                    style = MaterialTheme.typography.labelMedium,
+                    color = bodyColor.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(com.example.ui.theme.AppSpacing.sm))
+                Text(
+                    text = formatter.format(avg), 
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = bodyColor
+                )
             }
         }
     }
@@ -470,8 +504,8 @@ fun PeakHourHeatmap(activities: List<com.example.data.local.entity.ActivityEntit
     val maxCount = hourCounts.values.maxOrNull()?.toFloat() ?: 1f
     
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Spacer(modifier = Modifier.height(16.dp))
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
+            Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.lg))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 displayHours.forEach { hour ->
                     val count = hourCounts[hour] ?: hourCounts[hour-1] ?: hourCounts[hour+1] ?: 0
@@ -498,7 +532,7 @@ fun ConversionFunnel(activities: List<com.example.data.local.entity.ActivityEnti
     val maxVal = maxOf(interests, questions, sales, 1).toFloat()
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
             FunnelStep("Customer Interest", interests.toString(), if(maxVal>0) interests/maxVal else 0f)
             FunnelStep("Customer Question", questions.toString(), if(maxVal>0) questions/maxVal else 0f)
             FunnelStep("Sale", sales.toString(), if(maxVal>0) sales/maxVal else 0f)
@@ -510,12 +544,12 @@ fun ConversionFunnel(activities: List<com.example.data.local.entity.ActivityEnti
 fun FunnelStep(label: String, value: String, percentage: Float) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, color = bodyColor.copy(alpha = 0.8f), fontSize = 14.sp)
-            Text(value, color = bodyColor, fontWeight = FontWeight.Bold, fontSize = 14.sp, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+    Column(modifier = Modifier.padding(vertical = com.example.ui.theme.AppSpacing.sm)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.6f))
+            Text(value, style = MaterialTheme.typography.titleMedium, color = bodyColor, fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.xs))
         Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(bodyColor.copy(alpha = 0.1f))) {
             Box(modifier = Modifier.fillMaxWidth(percentage).fillMaxHeight().background(Color(0xFF6C63FF)))
         }
@@ -539,7 +573,7 @@ fun ProductAnalytics(activities: List<com.example.data.local.entity.ActivityEnti
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
         val onBg = MaterialTheme.colorScheme.onBackground
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
             if (salesByProduct.isEmpty()) {
                 Text("No data available yet.", color = onBg.copy(alpha=0.5f), fontSize=14.sp)
             } else {
@@ -555,12 +589,12 @@ fun ProductAnalytics(activities: List<com.example.data.local.entity.ActivityEnti
 fun ProductItem(name: String, revenue: String, units: String) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = com.example.ui.theme.AppSpacing.sm), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, color = bodyColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            Text(units, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), fontSize = 12.sp)
+            Text(name, style = MaterialTheme.typography.bodyLarge, color = bodyColor, fontWeight = FontWeight.Medium)
+            Text(units, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
         }
-        Text(revenue, color = bodyColor, fontWeight = FontWeight.Bold, fontSize = 14.sp, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+        Text(revenue, style = MaterialTheme.typography.titleMedium, color = bodyColor, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -576,7 +610,7 @@ fun AttributionAnalytics(activities: List<com.example.data.local.entity.Activity
     val maxVal = maxOf(actualRevenue, officialRevenue, givenRevenue, 1.0).toFloat()
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg), verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.sm)) {
             AttributionItem("Actual Revenue", formatter.format(actualRevenue), (actualRevenue/maxVal).toFloat(), Color(0xFF4ADE80))
             AttributionItem("Official Revenue", formatter.format(officialRevenue), (officialRevenue/maxVal).toFloat(), MaterialTheme.colorScheme.primary)
             AttributionItem("Revenue Given", formatter.format(givenRevenue), (givenRevenue/maxVal).toFloat(), Color(0xFFFBBF24))
@@ -589,12 +623,12 @@ fun AttributionAnalytics(activities: List<com.example.data.local.entity.Activity
 fun AttributionItem(source: String, value: String, percentage: Float, color: Color) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = com.example.ui.theme.AppSpacing.sm)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(source, color = bodyColor.copy(alpha = 0.8f), fontSize = 14.sp)
-            Text(value, color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp, style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
+            Text(source, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.6f))
+            Text(value, style = MaterialTheme.typography.titleMedium, color = color, fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.xs))
         Box(modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(bodyColor.copy(alpha = 0.1f))) {
             Box(modifier = Modifier.fillMaxWidth(percentage).fillMaxHeight().background(color))
         }
@@ -612,9 +646,9 @@ fun WinLossAnalysis(activities: List<com.example.data.local.entity.ActivityEntit
         .entries.sortedByDescending { it.value }.take(5)
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
             if (reasons.isEmpty()) {
-                Text("No data available yet.", color = bodyColor.copy(alpha=0.5f), fontSize=14.sp)
+                Text("No data available yet.", style = MaterialTheme.typography.bodyMedium, color = bodyColor.copy(alpha=0.5f))
             } else {
                 reasons.forEach { entry ->
                     val pct = entry.value.toFloat() / totalLost
@@ -627,10 +661,10 @@ fun WinLossAnalysis(activities: List<com.example.data.local.entity.ActivityEntit
 
 @Composable
 fun MissReason(reason: String, percentage: Float, bodyColor: Color) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(reason, color = bodyColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.weight(1f))
-        Spacer(modifier = Modifier.width(12.dp))
-        Text("${(percentage * 100).toInt()}%", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.width(40.dp))
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = com.example.ui.theme.AppSpacing.xs), verticalAlignment = Alignment.CenterVertically) {
+        Text(reason, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.6f), modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(com.example.ui.theme.AppSpacing.md))
+        Text("${(percentage * 100).toInt()}%", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -645,14 +679,14 @@ fun KnowledgeGapAnalysis(activities: List<com.example.data.local.entity.Activity
         .entries.sortedByDescending { it.value }.take(4)
 
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
             if (topQuestions.isEmpty()) {
-                Text("No data available yet.", color = bodyColor.copy(alpha=0.5f), fontSize=14.sp)
+                Text("No data available yet.", style = MaterialTheme.typography.bodyMedium, color = bodyColor.copy(alpha=0.5f))
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.sm)) {
                     val chunks = topQuestions.chunked(2)
                     chunks.forEach { chunk ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.sm)) {
                             chunk.forEach { entry ->
                                 KnowledgeGapPill("${entry.key} (${entry.value})", bodyColor)
                             }
@@ -670,8 +704,8 @@ fun KnowledgeGapPill(topic: String, bodyColor: Color) {
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
             .background(bodyColor.copy(alpha = 0.1f))
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = com.example.ui.theme.AppSpacing.md, vertical = 6.dp)
     ) {
-        Text(topic, color = bodyColor.copy(alpha = 0.8f), fontSize = 12.sp)
+        Text(topic, style = MaterialTheme.typography.labelSmall, color = bodyColor.copy(alpha = 0.8f))
     }
 }

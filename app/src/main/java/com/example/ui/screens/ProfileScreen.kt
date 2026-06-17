@@ -134,22 +134,22 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                 state = scrollState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 24.dp, 
-                    end = 24.dp, 
-                    top = headerContent.expandedHeight + 16.dp, 
+                    start = com.example.ui.theme.AppSpacing.lg, 
+                    end = com.example.ui.theme.AppSpacing.lg, 
+                    top = headerContent.expandedHeight + com.example.ui.theme.AppSpacing.lg, 
                     bottom = 200.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.xxl)
             ) {
                 item {
-                    Text(
-                        text = "MASTER DATA",
-                        color = sectionHeaderColor,
-                        letterSpacing = 1.5.sp,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                    )
+                    Column {
+                        Text(
+                            text = "MASTER DATA",
+                            color = sectionHeaderColor,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(top = com.example.ui.theme.AppSpacing.lg, bottom = com.example.ui.theme.AppSpacing.sm)
+                        )
+                    }
                 }
             item {
                 SettingItemCard(

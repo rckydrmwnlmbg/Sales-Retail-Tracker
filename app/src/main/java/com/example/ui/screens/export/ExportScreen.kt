@@ -516,8 +516,8 @@ fun ExportHeaderCollapsed(
 fun TimeframeSelector(selectedTimeframe: Int, onSelect: (Int) -> Unit) {
     GlassmorphicCard(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)
         ) {
             TimeOption("Today's Report", "Includes all shifts", selectedTimeframe == 0, { onSelect(0) })
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
@@ -541,13 +541,13 @@ fun TimeOption(title: String, subtitle: String, isSelected: Boolean, onClick: ()
             Text(
                 text = title,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium
             )
             Text(
                 text = subtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Light
             )
         }
@@ -571,7 +571,7 @@ fun ExportOptionsGrid(onExportClick: (String) -> Unit = {}) {
         onExportClick(type)
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
         ExportItemCard(
             title = "Evidence Report",
             subtitle = "CSV • Timestamped format",
@@ -608,7 +608,7 @@ fun ExportItemCard(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        contentPadding = PaddingValues(horizontal = 20.dp)
+        contentPadding = PaddingValues(horizontal = com.example.ui.theme.AppSpacing.xl)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -630,18 +630,18 @@ fun ExportItemCard(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(com.example.ui.theme.AppSpacing.lg))
                 Column(horizontalAlignment = Alignment.Start) {
                     Text(
                         text = title,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = subtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Normal
                     )
                 }

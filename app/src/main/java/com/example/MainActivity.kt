@@ -98,17 +98,13 @@ class MainActivity : FragmentActivity() {
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-          Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .hazeSource(state = LocalHazeState.current)
-          ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(if (isDarkTheme) darkBackground else lightBackground)
-            ) {
-            // Blobs
+            Box(modifier = Modifier.fillMaxSize().hazeSource(state = LocalHazeState.current)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(if (isDarkTheme) darkBackground else lightBackground)
+                ) {
+                // Blobs
             Box(modifier = Modifier
                 .align(Alignment.TopStart)
                 .offset(x = (-40).dp, y = (-20).dp)
@@ -216,10 +212,12 @@ class MainActivity : FragmentActivity() {
                   composable(Screen.Coach.route) { com.example.ui.screens.coach.CoachScreen(mainViewModel, onBack = { navController.popBackStack() }) }
               }
           }
-          }
-          }
+          
+          } // Close the hazeSource box
+          
+          // Close the main app Box
               
-              androidx.compose.animation.AnimatedVisibility(
+          androidx.compose.animation.AnimatedVisibility(
                   visible = showLogBottomSheet,
                   enter = androidx.compose.animation.fadeIn(),
                   exit = androidx.compose.animation.fadeOut()
@@ -238,7 +236,7 @@ class MainActivity : FragmentActivity() {
                                   style = dev.chrisbanes.haze.HazeStyle(
                                       backgroundColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f),
                                       tint = dev.chrisbanes.haze.HazeTint(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f)),
-                                      blurRadius = 24.dp
+                                      blurRadius = 16.dp
                                   )
                               )
                           }
@@ -277,9 +275,10 @@ class MainActivity : FragmentActivity() {
               if (currentRoute in bottomBarRoutes) {
                   Box(
                       modifier = Modifier
-                          .align(Alignment.BottomCenter)
+                          .fillMaxSize()
                           .navigationBarsPadding()
-                          .padding(bottom = 16.dp)
+                          .padding(bottom = 16.dp),
+                      contentAlignment = Alignment.BottomCenter
                   ) {
                       BottomNavBar(
                           currentRoute = currentRoute,
@@ -300,8 +299,9 @@ class MainActivity : FragmentActivity() {
                   }
               }
         }
-        }
       }
     }
   }
+}
+}
 }

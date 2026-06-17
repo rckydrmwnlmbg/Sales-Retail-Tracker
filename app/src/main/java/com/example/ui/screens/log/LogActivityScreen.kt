@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.hazeSource
 import com.example.data.local.entity.ActivityEntity
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.viewmodels.MainViewModel
@@ -73,12 +74,15 @@ fun LogActivityScreen(viewModel: MainViewModel) {
     var nsCustomerType by remember { mutableStateOf("") }
     var nsTopic by remember { mutableStateOf("") }
     var nsLearningContext by remember { mutableStateOf("") }
+    
+    val localHazeState = com.example.LocalHazeState.current
 
     Scaffold(
         containerColor = Color.Transparent
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = innerPadding.calculateTopPadding() + 24.dp, bottom = 200.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

@@ -59,8 +59,8 @@ object BlurCapabilityManager {
     }
 
     fun getBlurRadius(level: BlurLevel): Dp = when (level) {
-        BlurLevel.FULL    -> 20.dp
-        BlurLevel.REDUCED -> 10.dp
+        BlurLevel.FULL    -> 12.dp
+        BlurLevel.REDUCED -> 8.dp
         BlurLevel.MINIMAL -> 4.dp
         BlurLevel.NONE    -> 0.dp
     }
@@ -88,40 +88,25 @@ fun AdaptiveGlassCard(
     val blurRadius = BlurCapabilityManager.getBlurRadius(blurLevel)
     val cardAlpha = BlurCapabilityManager.getCardAlpha(blurLevel)
 
-    val cardModifier = modifier
-        .clip(RoundedCornerShape(16.dp))
-        .let {
-            it.hazeEffect(
-                state = hazeState,
-                style = HazeStyle(
-                    backgroundColor = if (isSystemInDarkTheme()) Color(0xFF04060C).copy(alpha = 0.4f) else Color.White.copy(alpha = 0.6f),
-                    tint = HazeTint(if (isSystemInDarkTheme()) Color(0xFF04060C).copy(alpha = 0.4f) else Color.White.copy(alpha = 0.6f)),
-                    blurRadius = blurRadius
-                )
-            )
-        }
-        .border(
-            width = 1.dp,
-            color = if (isSystemInDarkTheme()) Color.White.copy(0.12f) else Color.Black.copy(0.06f),
-            shape = RoundedCornerShape(16.dp)
-        )
-
-    Box(modifier = cardModifier) {
-        // Shimmer highlight — garis putih di tepi atas
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            androidx.compose.material3.MaterialTheme.colorScheme.outline,
-                            androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant,
-                            Color.Transparent
+            val cardModifier = modifier
+                .clip(RoundedCornerShape(16.dp))
+                .let {
+                    it.hazeEffect(
+                        state = hazeState,
+                        style = HazeStyle(
+                            backgroundColor = Color.Transparent,
+                            tint = HazeTint(if (isSystemInDarkTheme()) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.15f)),
+                            blurRadius = blurRadius
                         )
                     )
+                }
+                .border(
+                    width = 1.dp,
+                    color = if (isSystemInDarkTheme()) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(16.dp)
                 )
-        )
+
+    Box(modifier = cardModifier) {
         content()
     }
 }

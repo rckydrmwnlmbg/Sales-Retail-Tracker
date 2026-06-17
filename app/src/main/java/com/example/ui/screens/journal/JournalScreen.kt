@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.hazeSource
 import androidx.compose.ui.unit.lerp
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.GlassCard
@@ -97,7 +98,8 @@ fun JournalScreen(viewModel: MainViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = scrollState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 24.dp,
                 end = 24.dp,
@@ -403,9 +405,9 @@ fun FilterChipCustom(label: String, isSelected: Boolean, accentColor: Color, onC
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(20.dp))
             .clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = com.example.ui.theme.AppSpacing.lg, vertical = com.example.ui.theme.AppSpacing.sm)
     ) {
-        Text(text = label, color = textColor, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium)
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = textColor, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium)
     }
 }
 
@@ -420,37 +422,37 @@ fun JournalEntryCard(type: String, title: String, details: String, amount: Strin
             Box(modifier = Modifier.width(2.dp).fillMaxHeight().padding(vertical = 4.dp).background(color.copy(alpha = 0.3f)))
         }
 
-        GlassCard(modifier = Modifier.weight(1f).padding(bottom = 16.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
+        GlassCard(modifier = Modifier.weight(1f).padding(bottom = com.example.ui.theme.AppSpacing.lg)) {
+            Column(modifier = Modifier.padding(com.example.ui.theme.AppSpacing.lg)) {
                 val onSurfaceColor = MaterialTheme.colorScheme.onBackground
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = time, color = onSurfaceColor.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.width(com.example.ui.theme.AppSpacing.sm))
+                        Text(text = time, style = MaterialTheme.typography.labelSmall, color = onSurfaceColor.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
                     }
                     if (isEdited) {
                         Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(onSurfaceColor.copy(alpha = 0.1f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                            Text("EDITED", color = onSurfaceColor.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                            Text("EDITED", style = MaterialTheme.typography.labelSmall, color = onSurfaceColor.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(com.example.ui.theme.AppSpacing.md))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = title, color = onSurfaceColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(text = title, style = MaterialTheme.typography.titleMedium, color = onSurfaceColor, fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = details, color = onSurfaceColor.copy(alpha = 0.6f), fontSize = 14.sp, fontWeight = FontWeight.Light, lineHeight = 20.sp)
+                        Text(text = details, style = MaterialTheme.typography.bodyMedium, color = onSurfaceColor.copy(alpha = 0.6f), fontWeight = FontWeight.Light)
                     }
                     if (amount != null) {
-                        Text(text = amount, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+                        Text(text = amount, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = com.example.ui.theme.AppSpacing.sm))
                     }
                 }
 
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.End) {
+                Row(modifier = Modifier.fillMaxWidth().padding(top = com.example.ui.theme.AppSpacing.lg), horizontalArrangement = Arrangement.End) {
                     IconButton(onClick = onDelete, modifier = Modifier.size(32.dp).background(onSurfaceColor.copy(alpha = 0.05f), CircleShape)) {
                         Icon(imageVector = Icons.Outlined.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                     }
