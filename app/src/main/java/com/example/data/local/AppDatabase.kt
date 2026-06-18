@@ -15,7 +15,7 @@ import com.example.data.local.entity.ProductEntity
         ActivityEntity::class,
         GoalEntity::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

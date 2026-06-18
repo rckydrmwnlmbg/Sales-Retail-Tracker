@@ -2,21 +2,18 @@ package com.example.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeChild
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import com.example.LocalHazeState
@@ -26,25 +23,55 @@ fun Modifier.glassmorphism(
     shape: Shape = RoundedCornerShape(16.dp),
     borderWidth: Dp = 1.dp
 ): Modifier {
-    val baseAlpha = 0.08f
-    val shadowColor = Color.Black.copy(alpha = 0.37f)
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background == Color(0xFF060810)
+    val borderColors = if (isDark) {
+        listOf(Color.White.copy(alpha = 0.2f), Color.White.copy(alpha = 0.0f))
+    } else {
+        listOf(Color.White.copy(alpha = 0.8f), Color.White.copy(alpha = 0.2f))
+    }
+
     return this
         .clip(shape)
-        .hazeEffect(
+        .hazeChild(
             state = LocalHazeState.current,
-            style = HazeStyle(
-                backgroundColor = Color.Transparent,
-                tint = HazeTint(Color.White.copy(alpha = 0.05f)),
-                blurRadius = 12.dp
+            style = dev.chrisbanes.haze.HazeStyle(
+                backgroundColor = if (isDark) Color(0xFF1E293B).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.5f),
+                tint = dev.chrisbanes.haze.HazeTint(color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.5f)),
+                blurRadius = 4.dp
+            )
+        )
+        .background(
+            Brush.linearGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = if (isDark) 0.05f else 0.4f),
+                    Color.White.copy(alpha = if (isDark) 0.02f else 0.1f)
+                ),
+                start = Offset(0f, 0f),
+                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
             )
         )
         .border(
-            width = 1.dp,
-            color = if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.2f),
+            width = borderWidth,
+            brush = Brush.linearGradient(
+                colors = borderColors,
+                start = Offset(0f, 0f),
+                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+            ),
             shape = shape
         )
+}
+
+@Composable
+fun GlassmorphicCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier.glassmorphism()
+    ) {
+        content()
+    }
 }
 
 @Composable
@@ -52,36 +79,5 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .let {
-                it.hazeEffect(
-                    state = LocalHazeState.current,
-                    style = HazeStyle(
-                        backgroundColor = Color.Transparent,
-                        tint = HazeTint(Color.White.copy(alpha = 0.05f)),
-                        blurRadius = 12.dp
-                    )
-                )
-            }
-            .border(
-                width = 1.dp,
-                color = if (androidx.compose.foundation.isSystemInDarkTheme()) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(16.dp)
-            )
-    ) {
-        content()
-    }
-}
-
-@Composable
-fun GlassmorphicCard( // Legacy, pointing to GlassCard
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp),
-    content: @Composable BoxScope.() -> Unit
-) {
-    GlassCard(modifier = modifier) {
-        Box(content = content)
-    }
+    GlassmorphicCard(modifier, content)
 }

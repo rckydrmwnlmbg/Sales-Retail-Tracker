@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.lerp
 import com.example.LocalHazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeChild
 
 interface CollapsibleHeaderContent {
     val expandedHeight: Dp
@@ -78,19 +78,20 @@ fun CollapsibleBentoHeader(
             .fillMaxWidth()
             .height(headerHeight)
             .clip(shape)
-            // FIX: gunakan hazeEffect dari LocalHazeState
-            // bukan background solid color
-            .hazeEffect(
+            .hazeChild(
                 state = LocalHazeState.current,
                 style = HazeStyle(
-                    backgroundColor = Color.Transparent,
+                    backgroundColor = if (isDark)
+                        Color(0xFF060810).copy(alpha = 0.55f)
+                    else
+                        Color.White.copy(alpha = 0.72f),
                     tint = HazeTint(
                         if (isDark)
-                            Color.Black.copy(alpha = 0.25f)
+                            Color.Black.copy(alpha = 0.15f)
                         else
-                            Color.White.copy(alpha = 0.5f)
+                            Color.White.copy(alpha = 0.30f)
                     ),
-                    blurRadius = 24.dp
+                    blurRadius = 4.dp
                 )
             )
             .border(

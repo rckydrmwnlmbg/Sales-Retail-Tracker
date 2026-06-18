@@ -30,15 +30,15 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.hazeSource
+
 import androidx.compose.ui.unit.lerp
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.GlassCard
 import com.example.ui.components.AdaptiveGlassCard
 import com.example.ui.components.CollapsibleBentoHeader
 import com.example.ui.components.CollapsibleHeaderContent
-import com.example.LocalHazeState
-import dev.chrisbanes.haze.HazeState
+
+
 import com.example.ui.viewmodels.MainViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -61,7 +61,7 @@ fun JournalScreen(viewModel: MainViewModel) {
     val activities by viewModel.allActivities.collectAsState()
     val products by viewModel.allProducts.collectAsState()
     val scrollState = rememberLazyListState()
-    val localHazeState = com.example.LocalHazeState.current
+    
 
     val filteredEntries = remember(activities, selectedFilter, searchQuery) {
         activities.filter { entry ->
@@ -80,7 +80,7 @@ fun JournalScreen(viewModel: MainViewModel) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     JournalHeaderExpanded(
                         collapseProgress = collapseProgress,
-                        hazeState = localHazeState,
+                        
                         totalCount = activities.size,
                         selectedFilter = selectedFilter,
                         onFilterSelect = { selectedFilter = it }
@@ -195,7 +195,7 @@ fun JournalScreen(viewModel: MainViewModel) {
         }
 
         CollapsibleBentoHeader(
-            hazeState = localHazeState,
+            
             scrollState = scrollState,
             content = headerContent
         )
@@ -245,7 +245,6 @@ fun FilterSegmentedControl(
 @Composable
 fun JournalHeaderExpanded(
     collapseProgress: Float,
-    hazeState: HazeState,
     totalCount: Int,
     selectedFilter: String,
     onFilterSelect: (String) -> Unit
@@ -261,7 +260,7 @@ fun JournalHeaderExpanded(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.3f)
                     .height(96.dp)
@@ -289,7 +288,7 @@ fun JournalHeaderExpanded(
             }
 
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.2f)
                     .height(96.dp)
@@ -325,7 +324,7 @@ fun JournalHeaderExpanded(
         Spacer(Modifier.height(8.dp))
 
         AdaptiveGlassCard(
-            hazeState = hazeState,
+            
             modifier = Modifier
                 .fillMaxWidth()
                 .height(36.dp)

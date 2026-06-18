@@ -51,8 +51,8 @@ import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.AdaptiveGlassCard
 import com.example.ui.components.CollapsibleBentoHeader
 import com.example.ui.components.CollapsibleHeaderContent
-import com.example.LocalHazeState
-import dev.chrisbanes.haze.HazeState
+
+
 
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -85,7 +85,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
     val sectionHeaderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
 
     val scrollState = rememberLazyListState()
-    val localHazeState = com.example.LocalHazeState.current
+    
     val firstClockInTime by viewModel.firstClockInTime.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val jobTitle by viewModel.jobTitle.collectAsState()
@@ -105,7 +105,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     ProfileHeaderExpanded(
                         collapseProgress = collapseProgress,
-                        hazeState = localHazeState,
+                        
                         firstClockIn = firstClockInTime ?: "Belum ada",
                         userName = userName,
                         jobTitle = jobTitle,
@@ -153,7 +153,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                 }
             item {
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.Inventory,
                     title = "Product Catalog",
                     subtitle = "Manage brands, products, prices",
@@ -162,7 +162,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
             }
             item {
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.Group,
                     title = "Colleague List",
                     subtitle = "Manage staff and their roles",
@@ -171,7 +171,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
             }
             item {
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.TrackChanges,
                     title = "Goal Setting",
                     subtitle = "Set monthly target and KPI",
@@ -190,7 +190,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
             }
             item {
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.FileDownload,
                     title = "Export Data",
                     subtitle = "Download reports to CSV or Share",
@@ -209,18 +209,22 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
             }
             item {
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.Sync,
                     title = "Offline Sync",
                     subtitle = "Sync offline sales entries back to server",
                     onClick = { 
+                        val job = coroutineScope.launch { snackbarHostState.showSnackbar("Memulai sinkronisasi offline...") }
                         coroutineScope.launch { 
                             try {
-                                snackbarHostState.showSnackbar("Memulai sinkronisasi offline...")
                                 val activities = viewModel.allActivities.value
                                 com.example.logic.SupabaseSyncHelper.syncOfflineData(supabaseUrl, supabaseKey, activities)
+                                job.cancel()
+                                snackbarHostState.currentSnackbarData?.dismiss()
                                 snackbarHostState.showSnackbar("Data offline berhasil disinkronisasi dengan Supabase")
                             } catch (e: Exception) {
+                                job.cancel()
+                                snackbarHostState.currentSnackbarData?.dismiss()
                                 snackbarHostState.showSnackbar("Gagal: ${e.message}")
                             }
                         }
@@ -229,14 +233,14 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
             }
             item {
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.CloudUpload,
                     title = "Cloud Backup",
                     subtitle = "Stores backup of all sales data safely",
                     onClick = { 
+                        val job = coroutineScope.launch { snackbarHostState.showSnackbar("Membuat cadangan ke cloud...") }
                         coroutineScope.launch { 
                             try {
-                                snackbarHostState.showSnackbar("Membuat cadangan ke cloud...")
                                 val products = viewModel.allProducts.value
                                 val activities = viewModel.allActivities.value
                                 val goals = viewModel.allGoals.value
@@ -244,8 +248,12 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                                 com.example.logic.SupabaseSyncHelper.backupDataToCloud(
                                     supabaseUrl, supabaseKey, products, activities, goals, colleagues
                                 )
+                                job.cancel()
+                                snackbarHostState.currentSnackbarData?.dismiss()
                                 snackbarHostState.showSnackbar("Backup selesai. Data telah diamankan di Supabase.")
                             } catch (e: Exception) {
+                                job.cancel()
+                                snackbarHostState.currentSnackbarData?.dismiss()
                                 snackbarHostState.showSnackbar("Gagal: ${e.message}")
                             }
                         }
@@ -256,7 +264,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
             item {
                 val themeName = if (isDarkTheme) "Cosmic Dark" else "Stellar Bright"
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.DarkMode,
                     title = "App Theme",
                     subtitle = "Currently using $themeName",
@@ -270,7 +278,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
             }
             item {
                 SettingItemCard(
-                    hazeState = localHazeState,
+                    
                     icon = Icons.Outlined.Edit,
                     title = "Edit Profil",
                     subtitle = "Ubah jabatan, lokasi, dan jam shift",
@@ -302,7 +310,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                     val dateStr = sf.format(Date(log.timestamp))
                     
                     AdaptiveGlassCard(
-                        hazeState = localHazeState,
+                        
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp)
@@ -333,7 +341,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
         }
     }
     CollapsibleBentoHeader(
-        hazeState = localHazeState,
+        
         scrollState = scrollState,
         content = headerContent
     )
@@ -371,7 +379,6 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
 
 @Composable
 fun SettingItemCard(
-    hazeState: dev.chrisbanes.haze.HazeState,
     icon: ImageVector,
     title: String,
     subtitle: String,
@@ -382,7 +389,7 @@ fun SettingItemCard(
     val bodyColor = onBg
     
     AdaptiveGlassCard(
-        hazeState = hazeState,
+        
         modifier = Modifier
             .fillMaxWidth()
             .clickable { 
@@ -428,7 +435,6 @@ fun SettingItemCard(
 @Composable
 fun ProfileHeaderExpanded(
     collapseProgress: Float,
-    hazeState: HazeState,
     firstClockIn: String,
     userName: String,
     jobTitle: String,
@@ -445,7 +451,7 @@ fun ProfileHeaderExpanded(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.3f)
                     .height(96.dp)
@@ -472,7 +478,7 @@ fun ProfileHeaderExpanded(
             }
 
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.3f)
                     .height(96.dp)
@@ -502,7 +508,7 @@ fun ProfileHeaderExpanded(
         Spacer(Modifier.height(8.dp))
 
         AdaptiveGlassCard(
-            hazeState = hazeState,
+            
             modifier = Modifier
                 .fillMaxWidth()
                 .height(36.dp)

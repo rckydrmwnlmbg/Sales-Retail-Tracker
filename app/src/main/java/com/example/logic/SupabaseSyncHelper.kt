@@ -6,6 +6,8 @@ import com.example.data.local.entity.ActivityEntity
 import com.example.data.local.entity.GoalEntity
 import com.example.data.local.entity.ColleagueEntity
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.FieldNamingPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -24,7 +26,16 @@ object SupabaseSyncHelper {
         .build()
         
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-    private val gson = Gson()
+    private val gson: Gson = GsonBuilder()
+        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+        .create()
+
+    private fun buildEndpoint(baseUrl: String, path: String): String {
+        var cleanUrl = baseUrl.trim()
+        if (cleanUrl.endsWith("/")) cleanUrl = cleanUrl.dropLast(1)
+        if (cleanUrl.endsWith("/rest/v1")) cleanUrl = cleanUrl.dropLast(8)
+        return "$cleanUrl/rest/v1$path"
+    }
 
     suspend fun backupDataToCloud(
         supabaseUrl: String, 
@@ -42,25 +53,25 @@ object SupabaseSyncHelper {
             // Upsert Products
             if (products.isNotEmpty()) {
                 val pJson = gson.toJson(products)
-                executePost("$supabaseUrl/rest/v1/products?on_conflict=id", supabaseKey, pJson)
+                executePost(buildEndpoint(supabaseUrl, "/products?on_conflict=id"), supabaseKey, pJson)
             }
 
             // Upsert Activities
             if (activities.isNotEmpty()) {
                 val aJson = gson.toJson(activities)
-                executePost("$supabaseUrl/rest/v1/activities?on_conflict=id", supabaseKey, aJson)
+                executePost(buildEndpoint(supabaseUrl, "/activities?on_conflict=id"), supabaseKey, aJson)
             }
             
             // Upsert Goals
             if (goals.isNotEmpty()) {
                 val gJson = gson.toJson(goals)
-                executePost("$supabaseUrl/rest/v1/goals?on_conflict=monthYear", supabaseKey, gJson)
+                executePost(buildEndpoint(supabaseUrl, "/goals?on_conflict=month_year"), supabaseKey, gJson)
             }
             
             // Upsert Colleagues
             if (colleagues.isNotEmpty()) {
                 val cJson = gson.toJson(colleagues)
-                executePost("$supabaseUrl/rest/v1/colleagues?on_conflict=id", supabaseKey, cJson)
+                executePost(buildEndpoint(supabaseUrl, "/colleagues?on_conflict=id"), supabaseKey, cJson)
             }
             
             Log.d(TAG, "Backup to Supabase successful.")
@@ -83,7 +94,7 @@ object SupabaseSyncHelper {
         try {
             if (activities.isNotEmpty()) {
                 val aJson = gson.toJson(activities)
-                executePost("$supabaseUrl/rest/v1/activities?on_conflict=id", supabaseKey, aJson)
+                executePost(buildEndpoint(supabaseUrl, "/activities?on_conflict=id"), supabaseKey, aJson)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing to Supabase: ${e.message}")

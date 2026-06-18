@@ -36,8 +36,8 @@ import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.AdaptiveGlassCard
 import com.example.ui.components.CollapsibleBentoHeader
 import com.example.ui.components.CollapsibleHeaderContent
-import com.example.LocalHazeState
-import dev.chrisbanes.haze.HazeState
+
+
 
 val NeonCyan = Color(0xFF60B4FF)
 
@@ -48,7 +48,7 @@ private fun lerp(start: Float, stop: Float, fraction: Float): Float {
 @Composable
 fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
     val scrollState = rememberLazyListState()
-    val localHazeState = com.example.LocalHazeState.current
+    
     var selectedFormat by remember { mutableStateOf(0) } // we can remove this, we'll configure per button
     var selectedTimeframe by remember { mutableStateOf(0) } // 0: Today, 1: Week, 2: Month, 3: Custom
     
@@ -71,7 +71,7 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     ExportHeaderExpanded(
                         collapseProgress = collapseProgress,
-                        hazeState = localHazeState,
+                        
                         onBack = onBack,
                         totalActivities = activities.size
                     )
@@ -192,7 +192,7 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
         )
 
         CollapsibleBentoHeader(
-            hazeState = localHazeState,
+            
             scrollState = scrollState,
             content = headerContent
         )
@@ -364,7 +364,6 @@ fun FormatSelector(
 @Composable
 fun ExportHeaderExpanded(
     collapseProgress: Float,
-    hazeState: HazeState,
     onBack: () -> Unit,
     totalActivities: Int
 ) {
@@ -397,7 +396,7 @@ fun ExportHeaderExpanded(
             }
 
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.3f)
                     .height(96.dp)
@@ -425,7 +424,7 @@ fun ExportHeaderExpanded(
             }
 
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.1f)
                     .height(96.dp)
@@ -459,7 +458,7 @@ fun ExportHeaderExpanded(
         Spacer(Modifier.height(8.dp))
 
         AdaptiveGlassCard(
-            hazeState = hazeState,
+            
             modifier = Modifier
                 .fillMaxWidth()
                 .height(36.dp)

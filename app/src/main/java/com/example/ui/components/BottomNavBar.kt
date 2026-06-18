@@ -45,10 +45,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.navigation.Screen
+
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeChild
 
 class NavBarShape(
     private val cornerRadiusDp: Float,
@@ -134,17 +135,20 @@ fun BottomNavBar(
                 .clip(navBarShape)
                 .let {
                     if (hazeState != null) {
-                        it.hazeEffect(
+                        it.hazeChild(
                             state = hazeState,
                             style = HazeStyle(
-                                backgroundColor = Color.Transparent,
+                                backgroundColor = if (androidx.compose.foundation.isSystemInDarkTheme())
+                                    Color(0xFF060810).copy(alpha = 0.55f)
+                                else
+                                    Color.White.copy(alpha = 0.72f),
                                 tint = HazeTint(
-                                    if (androidx.compose.foundation.isSystemInDarkTheme()) 
-                                        Color.Black.copy(alpha = 0.25f) 
-                                    else 
-                                        Color.White.copy(alpha = 0.5f)
+                                    if (androidx.compose.foundation.isSystemInDarkTheme())
+                                        Color.Black.copy(alpha = 0.15f)
+                                    else
+                                        Color.White.copy(alpha = 0.30f)
                                 ),
-                                blurRadius = 24.dp
+                                blurRadius = 4.dp
                             )
                         )
                     } else {

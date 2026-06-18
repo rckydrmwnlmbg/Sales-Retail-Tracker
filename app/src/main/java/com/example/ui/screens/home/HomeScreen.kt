@@ -38,14 +38,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.hazeSource
+
 import androidx.compose.ui.platform.LocalContext
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.AdaptiveGlassCard
 import com.example.ui.components.CollapsibleBentoHeader
 import com.example.ui.components.CollapsibleHeaderContent
-import com.example.LocalHazeState
-import dev.chrisbanes.haze.HazeState
+
+
 import java.text.SimpleDateFormat
 import java.util.*
 import java.time.LocalTime
@@ -82,7 +82,7 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
     val scrollState = rememberLazyListState()
     val isClockedIn by viewModel.isClockedIn.collectAsState()
     val clockInHour by viewModel.clockInHour.collectAsState()
-    val localHazeState = com.example.LocalHazeState.current
+    
 
     val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
     val activeHour = if (isClockedIn && clockInHour != null) clockInHour!! else currentHour
@@ -106,7 +106,7 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     HomeHeaderExpanded(
                         collapseProgress = collapseProgress,
-                        hazeState = localHazeState,
+                        
                         userName = userName,
                         shiftInfo = ShiftInfo(shiftName, shiftTime, isClockedIn),
                         onClockIn = { viewModel.clockIn() },
@@ -177,7 +177,7 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
         }
 
         CollapsibleBentoHeader(
-            hazeState = localHazeState,
+            
             scrollState = scrollState,
             content = headerContent
         )
@@ -193,7 +193,6 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
 @Composable
 fun HomeHeaderExpanded(
     collapseProgress: Float,
-    hazeState: HazeState,
     userName: String,
     shiftInfo: ShiftInfo,
     onClockIn: () -> Unit,
@@ -210,7 +209,7 @@ fun HomeHeaderExpanded(
             horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)
         ) {
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.5f)
                     .height(90.dp)
@@ -244,7 +243,7 @@ fun HomeHeaderExpanded(
             }
 
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.1f)
                     .height(90.dp)
@@ -321,7 +320,7 @@ fun HomeHeaderExpanded(
         Spacer(Modifier.height(com.example.ui.theme.AppSpacing.sm))
 
         AdaptiveGlassCard(
-            hazeState = hazeState,
+            
             modifier = Modifier
                 .fillMaxWidth()
                 .height(32.dp)

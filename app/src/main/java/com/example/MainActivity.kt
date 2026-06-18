@@ -44,8 +44,8 @@ import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.screens.PlaceholderScreen
 
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 
@@ -98,7 +98,11 @@ class MainActivity : FragmentActivity() {
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxSize().hazeSource(state = LocalHazeState.current)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .haze(state = LocalHazeState.current)
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -152,8 +156,9 @@ class MainActivity : FragmentActivity() {
                 .blur(80.dp)
             )
           }
+        } // Close the Box with .haze()
           
-          Scaffold(
+        Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
             bottomBar = {
@@ -213,8 +218,6 @@ class MainActivity : FragmentActivity() {
               }
           }
           
-          } // Close the hazeSource box
-          
           // Close the main app Box
               
           androidx.compose.animation.AnimatedVisibility(
@@ -231,12 +234,12 @@ class MainActivity : FragmentActivity() {
                               onClick = { showLogBottomSheet = false }
                           )
                           .let {
-                              it.hazeEffect(
+                              it.hazeChild(
                                   state = LocalHazeState.current,
                                   style = dev.chrisbanes.haze.HazeStyle(
                                       backgroundColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f),
                                       tint = dev.chrisbanes.haze.HazeTint(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f)),
-                                      blurRadius = 16.dp
+                                      blurRadius = 4.dp
                                   )
                               )
                           }

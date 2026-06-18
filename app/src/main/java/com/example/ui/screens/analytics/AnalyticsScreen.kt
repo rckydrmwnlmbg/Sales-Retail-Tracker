@@ -26,13 +26,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.hazeSource
+
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.components.AdaptiveGlassCard
 import com.example.ui.components.CollapsibleBentoHeader
 import com.example.ui.components.CollapsibleHeaderContent
-import com.example.LocalHazeState
-import dev.chrisbanes.haze.HazeState
+
+
 import com.example.ui.viewmodels.MainViewModel
 import java.text.NumberFormat
 import java.util.*
@@ -45,7 +45,7 @@ private fun lerp(start: Float, stop: Float, fraction: Float): Float {
 @Composable
 fun AnalyticsScreen(viewModel: MainViewModel) {
     val scrollState = rememberLazyListState()
-    val localHazeState = com.example.LocalHazeState.current
+    
     var selectedPeriod by remember { mutableStateOf(2) } // 0: Daily, 1: Weekly, 2: Monthly
 
     val allActivities by viewModel.allActivities.collectAsState()
@@ -90,7 +90,7 @@ fun AnalyticsScreen(viewModel: MainViewModel) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     AnalyticsHeaderExpanded(
                         collapseProgress = collapseProgress,
-                        hazeState = localHazeState,
+                        
                         revenueValue = revenue,
                         transactionCount = transactions,
                         selectedPeriod = selectedPeriod,
@@ -161,7 +161,7 @@ fun AnalyticsScreen(viewModel: MainViewModel) {
         }
 
         CollapsibleBentoHeader(
-            hazeState = localHazeState,
+            
             scrollState = scrollState,
             content = headerContent
         )
@@ -222,7 +222,6 @@ fun SegmentedPeriodControl(
 @Composable
 fun AnalyticsHeaderExpanded(
     collapseProgress: Float,
-    hazeState: HazeState,
     revenueValue: Double,
     transactionCount: Int,
     selectedPeriod: Int,
@@ -240,7 +239,7 @@ fun AnalyticsHeaderExpanded(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.3f)
                     .height(96.dp)
@@ -268,7 +267,7 @@ fun AnalyticsHeaderExpanded(
             }
 
             AdaptiveGlassCard(
-                hazeState = hazeState,
+                
                 modifier = Modifier
                     .weight(1.3f)
                     .height(96.dp)
@@ -296,7 +295,7 @@ fun AnalyticsHeaderExpanded(
         Spacer(Modifier.height(8.dp))
 
         AdaptiveGlassCard(
-            hazeState = hazeState,
+            
             modifier = Modifier
                 .fillMaxWidth()
                 .height(36.dp)
