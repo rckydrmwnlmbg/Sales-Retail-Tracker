@@ -73,9 +73,9 @@ fun AdaptiveGlassCard(
         .hazeChild(
             state = com.example.LocalHazeState.current,
             style = dev.chrisbanes.haze.HazeStyle(
-                backgroundColor = if (isDark) Color(0xFF1E293B).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.5f),
-                tint = dev.chrisbanes.haze.HazeTint(color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.5f)),
-                blurRadius = 4.dp
+                backgroundColor = if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.7f),
+                tint = dev.chrisbanes.haze.HazeTint(color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.7f)),
+                blurRadius = 48.dp
             )
         )
         .background(

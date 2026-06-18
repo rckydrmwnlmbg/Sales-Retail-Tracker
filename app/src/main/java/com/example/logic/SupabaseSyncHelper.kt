@@ -49,32 +49,52 @@ object SupabaseSyncHelper {
             throw Exception("Supabase URL atau Key kosong. Silakan isi di menu Profil.")
         }
         
+        val errors = mutableListOf<String>()
         try {
             // Upsert Products
             if (products.isNotEmpty()) {
                 val pJson = gson.toJson(products)
-                executePost(buildEndpoint(supabaseUrl, "/products?on_conflict=id"), supabaseKey, pJson)
+                try {
+                    executePost(buildEndpoint(supabaseUrl, "/products?on_conflict=id"), supabaseKey, pJson)
+                } catch (e: Exception) {
+                    errors.add("Products: ${e.message}")
+                }
             }
 
             // Upsert Activities
             if (activities.isNotEmpty()) {
                 val aJson = gson.toJson(activities)
-                executePost(buildEndpoint(supabaseUrl, "/activities?on_conflict=id"), supabaseKey, aJson)
+                try {
+                    executePost(buildEndpoint(supabaseUrl, "/activities?on_conflict=id"), supabaseKey, aJson)
+                } catch (e: Exception) {
+                    errors.add("Activities: ${e.message}")
+                }
             }
             
             // Upsert Goals
             if (goals.isNotEmpty()) {
                 val gJson = gson.toJson(goals)
-                executePost(buildEndpoint(supabaseUrl, "/goals?on_conflict=month_year"), supabaseKey, gJson)
+                try {
+                    executePost(buildEndpoint(supabaseUrl, "/goals?on_conflict=month_year"), supabaseKey, gJson)
+                } catch (e: Exception) {
+                    errors.add("Goals: ${e.message}")
+                }
             }
             
             // Upsert Colleagues
             if (colleagues.isNotEmpty()) {
                 val cJson = gson.toJson(colleagues)
-                executePost(buildEndpoint(supabaseUrl, "/colleagues?on_conflict=id"), supabaseKey, cJson)
+                try {
+                    executePost(buildEndpoint(supabaseUrl, "/colleagues?on_conflict=id"), supabaseKey, cJson)
+                } catch (e: Exception) {
+                    errors.add("Colleagues: ${e.message}")
+                }
             }
             
-            Log.d(TAG, "Backup to Supabase successful.")
+            Log.d(TAG, "Backup to Supabase finished. Errors: $errors")
+            if (errors.isNotEmpty()) {
+                throw Exception(errors.joinToString(" | "))
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error backing up to Supabase: ${e.message}")
             throw e

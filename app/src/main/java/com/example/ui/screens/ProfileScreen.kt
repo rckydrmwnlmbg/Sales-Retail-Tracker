@@ -221,11 +221,11 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                                 com.example.logic.SupabaseSyncHelper.syncOfflineData(supabaseUrl, supabaseKey, activities)
                                 job.cancel()
                                 snackbarHostState.currentSnackbarData?.dismiss()
-                                snackbarHostState.showSnackbar("Data offline berhasil disinkronisasi dengan Supabase")
+                                snackbarHostState.showSnackbar(message = "Data offline berhasil disinkronisasi dengan Supabase", duration = androidx.compose.material3.SnackbarDuration.Long)
                             } catch (e: Exception) {
                                 job.cancel()
                                 snackbarHostState.currentSnackbarData?.dismiss()
-                                snackbarHostState.showSnackbar("Gagal: ${e.message}")
+                                snackbarHostState.showSnackbar(message = "Gagal: ${e.message}", duration = androidx.compose.material3.SnackbarDuration.Long)
                             }
                         }
                     }
@@ -250,11 +250,11 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                                 )
                                 job.cancel()
                                 snackbarHostState.currentSnackbarData?.dismiss()
-                                snackbarHostState.showSnackbar("Backup selesai. Data telah diamankan di Supabase.")
+                                snackbarHostState.showSnackbar(message = "Backup selesai. Data telah diamankan di Supabase.", duration = androidx.compose.material3.SnackbarDuration.Long)
                             } catch (e: Exception) {
                                 job.cancel()
                                 snackbarHostState.currentSnackbarData?.dismiss()
-                                snackbarHostState.showSnackbar("Gagal: ${e.message}")
+                                snackbarHostState.showSnackbar(message = "Gagal: ${e.message}", duration = androidx.compose.material3.SnackbarDuration.Long)
                             }
                         }
                     }

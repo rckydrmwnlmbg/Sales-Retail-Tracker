@@ -82,16 +82,16 @@ fun CollapsibleBentoHeader(
                 state = LocalHazeState.current,
                 style = HazeStyle(
                     backgroundColor = if (isDark)
-                        Color(0xFF060810).copy(alpha = 0.55f)
+                        Color(0xFF060810).copy(alpha = 0.7f)
                     else
-                        Color.White.copy(alpha = 0.72f),
+                        Color.White.copy(alpha = 0.8f),
                     tint = HazeTint(
                         if (isDark)
-                            Color.Black.copy(alpha = 0.15f)
+                            Color.Black.copy(alpha = 0.3f)
                         else
-                            Color.White.copy(alpha = 0.30f)
+                            Color.White.copy(alpha = 0.5f)
                     ),
-                    blurRadius = 4.dp
+                    blurRadius = 48.dp
                 )
             )
             .border(

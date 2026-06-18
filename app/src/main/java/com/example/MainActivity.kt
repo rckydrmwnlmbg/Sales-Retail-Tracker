@@ -1,7 +1,7 @@
 package com.example
 
 import android.os.Bundle
-import androidx.fragment.app.FragmentActivity
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -51,7 +51,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
 val LocalHazeState = staticCompositionLocalOf<HazeState> { error("No HazeState") }
 
-class MainActivity : FragmentActivity() {
+class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
@@ -237,9 +237,9 @@ class MainActivity : FragmentActivity() {
                               it.hazeChild(
                                   state = LocalHazeState.current,
                                   style = dev.chrisbanes.haze.HazeStyle(
-                                      backgroundColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f),
-                                      tint = dev.chrisbanes.haze.HazeTint(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f)),
-                                      blurRadius = 4.dp
+                                      backgroundColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f),
+                                      tint = dev.chrisbanes.haze.HazeTint(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f)),
+                                      blurRadius = 48.dp
                                   )
                               )
                           }
