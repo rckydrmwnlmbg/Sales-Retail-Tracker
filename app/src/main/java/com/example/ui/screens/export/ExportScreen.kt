@@ -126,48 +126,55 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
                                 snackbarHostState.showSnackbar("Data aktivitas belum ada")
                             }
                         } else {
-                            val time = when(selectedTimeframe) {
-                                0 -> "Hari Ini"
-                                1 -> "Minggu Ini"
-                                2 -> "Bulan Ini"
-                                else -> "Semua Riwayat"
-                            }
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Menyiapkan dokumen '$reportType' ($time)...")
-                                kotlinx.coroutines.delay(800)
-                                
                                 val calendar = java.util.Calendar.getInstance()
                                 val now = calendar.timeInMillis
+                                
+                                val startFormat = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                                val timeLabel = when (selectedTimeframe) {
+                                    0 -> "Hari Ini (${startFormat.format(calendar.time)})"
+                                    1 -> {
+                                        val calStart = calendar.clone() as java.util.Calendar
+                                        calStart.set(java.util.Calendar.DAY_OF_WEEK, calStart.firstDayOfWeek)
+                                        val calEnd = calStart.clone() as java.util.Calendar
+                                        calEnd.add(java.util.Calendar.DAY_OF_WEEK, 6)
+                                        "Minggu Ini (${startFormat.format(calStart.time)} - ${startFormat.format(calEnd.time)})"
+                                    }
+                                    2 -> {
+                                        val startCal = java.util.Calendar.getInstance()
+                                        startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                        
+                                        val endCal = java.util.Calendar.getInstance()
+                                        endCal.add(java.util.Calendar.MONTH, 1)
+                                        endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                        
+                                        "Bulan Ini (${startFormat.format(startCal.time)} - ${startFormat.format(endCal.time)})"
+                                    }
+                                    else -> "Semua Riwayat"
+                                }
+
+                                snackbarHostState.showSnackbar("Menyiapkan dokumen '$reportType' ($timeLabel)...")
+                                kotlinx.coroutines.delay(800)
+                                
                                 val filteredActivities = activities.filter {
                                     val actCal = java.util.Calendar.getInstance().apply { timeInMillis = it.timestamp }
                                     when (selectedTimeframe) {
                                         0 -> actCal.get(java.util.Calendar.DAY_OF_YEAR) == calendar.get(java.util.Calendar.DAY_OF_YEAR) && actCal.get(java.util.Calendar.YEAR) == calendar.get(java.util.Calendar.YEAR)
                                         1 -> actCal.get(java.util.Calendar.WEEK_OF_YEAR) == calendar.get(java.util.Calendar.WEEK_OF_YEAR) && actCal.get(java.util.Calendar.YEAR) == calendar.get(java.util.Calendar.YEAR)
                                         2 -> {
-                                            val today = calendar.get(java.util.Calendar.DAY_OF_MONTH)
                                             val startCal = java.util.Calendar.getInstance()
+                                            startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                            startCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                            startCal.set(java.util.Calendar.MINUTE, 0)
+                                            startCal.set(java.util.Calendar.SECOND, 0)
+                                            
                                             val endCal = java.util.Calendar.getInstance()
-                                            if (today >= 10) {
-                                                startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
-                                                startCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
-                                                startCal.set(java.util.Calendar.MINUTE, 0)
-                                                startCal.set(java.util.Calendar.SECOND, 0)
-                                                endCal.add(java.util.Calendar.MONTH, 1)
-                                                endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
-                                                endCal.set(java.util.Calendar.HOUR_OF_DAY, 23)
-                                                endCal.set(java.util.Calendar.MINUTE, 59)
-                                                endCal.set(java.util.Calendar.SECOND, 59)
-                                            } else {
-                                                startCal.add(java.util.Calendar.MONTH, -1)
-                                                startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
-                                                startCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
-                                                startCal.set(java.util.Calendar.MINUTE, 0)
-                                                startCal.set(java.util.Calendar.SECOND, 0)
-                                                endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
-                                                endCal.set(java.util.Calendar.HOUR_OF_DAY, 23)
-                                                endCal.set(java.util.Calendar.MINUTE, 59)
-                                                endCal.set(java.util.Calendar.SECOND, 59)
-                                            }
+                                            endCal.add(java.util.Calendar.MONTH, 1)
+                                            endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                            endCal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                                            endCal.set(java.util.Calendar.MINUTE, 59)
+                                            endCal.set(java.util.Calendar.SECOND, 59)
+                                            
                                             it.timestamp in startCal.timeInMillis..endCal.timeInMillis
                                         }
                                         else -> true
@@ -184,10 +191,10 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
                                 val currentColleagues = viewModel.allColleagues.value
                                 
                                 rows.add(listOf("Report", "Sales Performance"))
-                                rows.add(listOf("Timeframe", time))
+                                rows.add(listOf("Timeframe", timeLabel))
                                 rows.add(listOf())
                                 
-                                rows.add(listOf("Timestamp", "Shift (Clock In - Clock Out)", "Type", "Product Name", "Price per Item", "QTY", "Discount (%)", "Final Price", "Credit To", "Credit From"))
+                                rows.add(listOf("Timestamp", "Shift", "Type", "Product Code", "Product Name", "Category", "Price per Item", "QTY", "Discount (%)", "Final Price", "Credit To", "Credit From"))
                                 
                                 var totalHariMasuk = 0
                                 var totalPenjualan = 0.0
@@ -201,7 +208,12 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
                                     val clockOut = acts.find { it.type == "CLOCK_OUT" }
                                     val timeStrIn = clockIn?.let { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it.timestamp)) } ?: "-"
                                     val timeStrOut = clockOut?.let { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it.timestamp)) } ?: "-"
-                                    val shiftRecord = "In: $timeStrIn - Out: $timeStrOut"
+                                    
+                                    val shiftType = clockIn?.let { 
+                                        val inCal = java.util.Calendar.getInstance().apply { timeInMillis = it.timestamp }
+                                        if (inCal.get(java.util.Calendar.HOUR_OF_DAY) < 13) "Pagi" else "Siang" 
+                                    } ?: "Unknown"
+                                    val shiftRecord = "Shift $shiftType (In: $timeStrIn - Out: $timeStrOut)"
                                     
                                     if (clockIn != null && clockOut != null) {
                                         val durationHours = (clockOut.timestamp - clockIn.timestamp) / 3600000.0
@@ -213,35 +225,63 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
                                     for (act in acts) {
                                         if (act.type == "SALE") {
                                             totalPenjualan += (act.finalPrice ?: act.price ?: 0.0)
-                                        }
 
-                                        val timeStr = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(act.timestamp))
-                                        val prodName = currentProducts.find { it.id == act.productId }?.name ?: "-"
-                                        val toName = if (act.creditedToId != null) currentColleagues.find { it.id == act.creditedToId }?.name ?: "-" else "-"
-                                        val fromName = if (act.creditedFromId != null) currentColleagues.find { it.id == act.creditedFromId }?.name ?: "-" else "-"
-                                        val priceStr = act.price?.toLong()?.toString() ?: "-"
-                                        val qtyStr = act.quantity?.toString() ?: "-"
-                                        val discStr = act.discount?.toString() ?: "-"
-                                        val finalPriceStr = act.finalPrice?.toLong()?.toString() ?: "-"
-                                        
-                                        rows.add(listOf(
-                                            timeStr,
-                                            shiftRecord,
-                                            act.type,
-                                            if (act.type == "SALE" || act.type == "INTEREST") prodName else "-",
-                                            if (act.type == "SALE") priceStr else "-",
-                                            if (act.type == "SALE") qtyStr else "-",
-                                            if (act.type == "SALE") discStr else "-",
-                                            if (act.type == "SALE") finalPriceStr else "-",
-                                            toName,
-                                            fromName
-                                        ))
+                                            val timeStr = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(act.timestamp))
+                                            val prodFound = currentProducts.find { it.id == act.productId }
+                                            val prodCode = prodFound?.code?.takeIf { it.isNotBlank() } ?: "-"
+                                            val prodName = prodFound?.name ?: "-"
+                                            val catName = prodFound?.category?.takeIf { it.isNotBlank() } ?: "-"
+                                            val toName = if (act.creditedToId != null) currentColleagues.find { it.id == act.creditedToId }?.name ?: "-" else "-"
+                                            val fromName = if (act.creditedFromId != null) currentColleagues.find { it.id == act.creditedFromId }?.name ?: "-" else "-"
+                                            val priceStr = act.price?.toLong()?.toString() ?: "-"
+                                            val qtyStr = act.quantity?.toString() ?: "-"
+                                            val discStr = act.discount?.toString() ?: "-"
+                                            val finalPriceStr = act.finalPrice?.toLong()?.toString() ?: "-"
+                                            
+                                            rows.add(listOf(
+                                                timeStr,
+                                                shiftRecord,
+                                                act.type,
+                                                prodCode,
+                                                prodName,
+                                                catName,
+                                                priceStr,
+                                                qtyStr,
+                                                discStr,
+                                                finalPriceStr,
+                                                toName,
+                                                fromName
+                                            ))
+                                        }
                                     }
                                 }
 
+                                val productCounts = filteredActivities.filter { it.type == "SALE" && it.productId != null }.groupBy { it.productId!! }.mapValues { it.value.sumOf { act -> act.quantity ?: 1 } }
+                                val topProductId = productCounts.maxByOrNull { it.value }?.key
+                                val topProductName = currentProducts.find { it.id == topProductId }?.name ?: "-"
+                                val topProductCount = productCounts[topProductId] ?: 0
+                                val topProductStr = if (topProductId != null) "$topProductName ($topProductCount items)" else "-"
+                                
+                                val personalGoalValue = viewModel.currentGoal.value?.personalTarget ?: 0.0
+                                val targetAmount = when (selectedTimeframe) {
+                                    0 -> personalGoalValue / 30.0
+                                    1 -> personalGoalValue / 4.0
+                                    else -> personalGoalValue
+                                }
+                                
+                                val targetPerc = if (targetAmount > 0) (totalPenjualan / targetAmount * 100).toInt() else 0
+                                val targetStr = if (targetAmount > 0) "Target: Rp ${targetAmount.toLong()} | Achieved: Rp ${totalPenjualan.toLong()} ($targetPerc%)" else "Target belum diatur"
+                                
+                                val totalTransactions = filteredActivities.count { it.type == "SALE" }
+                                val totalItemsSold = filteredActivities.filter { it.type == "SALE" }.sumOf { it.quantity ?: 1 }
+
                                 rows.add(listOf())
                                 rows.add(listOf("Total Hari Masuk", totalHariMasuk.toString()))
+                                rows.add(listOf("Total Transaksi", totalTransactions.toString()))
+                                rows.add(listOf("Total Items Terjual", totalItemsSold.toString()))
                                 rows.add(listOf("Total Penjualan", totalPenjualan.toLong().toString()))
+                                rows.add(listOf("Produk Paling Sering Dijual", topProductStr))
+                                rows.add(listOf("Sales Target", targetStr))
 
                                 previewData = rows
                                 currentReportType = reportType

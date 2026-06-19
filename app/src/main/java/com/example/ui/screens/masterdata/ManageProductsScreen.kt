@@ -343,8 +343,11 @@ fun ManageProductsScreen(
     }
 
     if (showDialog) {
+        val defaultCategories = listOf("G-Shock", "Baby-G", "Edifice", "Pro Trek", "Sheen", "Casio")
+        val categories = (defaultCategories + products.map { it.category }.filter { it.isNotBlank() }).distinct()
         ProductDialog(
             initialProduct = selectedProduct,
+            existingCategories = categories,
             onDismiss = { showDialog = false },
             onSave = {
                 viewModel.addOrUpdateProduct(it) { errorMsg ->
@@ -387,6 +390,7 @@ fun ProductItem(product: ProductEntity, onEdit: () -> Unit, onDelete: () -> Unit
 @Composable
 fun ProductDialog(
     initialProduct: ProductEntity?,
+    existingCategories: List<String> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (ProductEntity) -> Unit
 ) {
@@ -438,14 +442,43 @@ fun ProductDialog(
                         modifier = Modifier.fillMaxWidth(),
                         colors = colors
                     )
-                    OutlinedTextField(
-                        value = category,
-                        onValueChange = { category = it },
-                        label = { Text("Category") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = colors
-                    )
+                    var catExpanded by remember { mutableStateOf(false) }
+                    
+                    val filteredCategories = existingCategories.filter { it.contains(category, ignoreCase = true) }
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = catExpanded,
+                        onExpandedChange = { catExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = category,
+                            onValueChange = { 
+                                category = it 
+                                catExpanded = true
+                            },
+                            label = { Text("Category") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            colors = colors,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = catExpanded) }
+                        )
+                        if (filteredCategories.isNotEmpty() && catExpanded) {
+                            ExposedDropdownMenu(
+                                expanded = catExpanded,
+                                onDismissRequest = { catExpanded = false }
+                            ) {
+                                filteredCategories.forEach { cat ->
+                                    DropdownMenuItem(
+                                        text = { Text(cat) },
+                                        onClick = {
+                                            category = cat
+                                            catExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                     OutlinedTextField(
                         value = priceStr,
                         onValueChange = { priceStr = it },
