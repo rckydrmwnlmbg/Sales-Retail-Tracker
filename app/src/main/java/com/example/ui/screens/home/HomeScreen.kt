@@ -109,13 +109,13 @@ fun HomeScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit = {}) {
                         
                         userName = userName,
                         shiftInfo = ShiftInfo(shiftName, shiftTime, isClockedIn),
-                        onClockIn = { viewModel.clockIn() },
+                        onClockIn = { viewModel.clockIn(shiftName, shiftTime) },
                         onClockOut = { viewModel.clockOut() }
                     )
                     HomeHeaderCollapsed(
                         collapseProgress = collapseProgress,
                         shiftInfo = ShiftInfo(shiftName, shiftTime, isClockedIn),
-                        onClockIn = { viewModel.clockIn() },
+                        onClockIn = { viewModel.clockIn(shiftName, shiftTime) },
                         onClockOut = { viewModel.clockOut() }
                     )
                 }
@@ -625,8 +625,8 @@ fun AttributionSection(viewModel: MainViewModel) {
     val activities by viewModel.allActivities.collectAsState()
     val sales = activities.filter { it.type == "SALE" }
     
-    val actualRevenue = sales.filter { it.creditedToId == null }.sumOf { it.price ?: 0.0 }
-    val givenRevenue = sales.filter { it.creditedToId != null }.sumOf { it.price ?: 0.0 }
+    val actualRevenue = sales.filter { it.creditedToId == null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
+    val givenRevenue = sales.filter { it.creditedToId != null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     val officialRevenue = actualRevenue + givenRevenue
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 

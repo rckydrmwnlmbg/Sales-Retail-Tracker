@@ -143,7 +143,33 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
                                     when (selectedTimeframe) {
                                         0 -> actCal.get(java.util.Calendar.DAY_OF_YEAR) == calendar.get(java.util.Calendar.DAY_OF_YEAR) && actCal.get(java.util.Calendar.YEAR) == calendar.get(java.util.Calendar.YEAR)
                                         1 -> actCal.get(java.util.Calendar.WEEK_OF_YEAR) == calendar.get(java.util.Calendar.WEEK_OF_YEAR) && actCal.get(java.util.Calendar.YEAR) == calendar.get(java.util.Calendar.YEAR)
-                                        2 -> actCal.get(java.util.Calendar.MONTH) == calendar.get(java.util.Calendar.MONTH) && actCal.get(java.util.Calendar.YEAR) == calendar.get(java.util.Calendar.YEAR)
+                                        2 -> {
+                                            val today = calendar.get(java.util.Calendar.DAY_OF_MONTH)
+                                            val startCal = java.util.Calendar.getInstance()
+                                            val endCal = java.util.Calendar.getInstance()
+                                            if (today >= 10) {
+                                                startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                                startCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                                startCal.set(java.util.Calendar.MINUTE, 0)
+                                                startCal.set(java.util.Calendar.SECOND, 0)
+                                                endCal.add(java.util.Calendar.MONTH, 1)
+                                                endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                                endCal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                                                endCal.set(java.util.Calendar.MINUTE, 59)
+                                                endCal.set(java.util.Calendar.SECOND, 59)
+                                            } else {
+                                                startCal.add(java.util.Calendar.MONTH, -1)
+                                                startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                                startCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                                startCal.set(java.util.Calendar.MINUTE, 0)
+                                                startCal.set(java.util.Calendar.SECOND, 0)
+                                                endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                                                endCal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                                                endCal.set(java.util.Calendar.MINUTE, 59)
+                                                endCal.set(java.util.Calendar.SECOND, 59)
+                                            }
+                                            it.timestamp in startCal.timeInMillis..endCal.timeInMillis
+                                        }
                                         else -> true
                                     }
                                 }
@@ -154,28 +180,69 @@ fun ExportScreen(viewModel: MainViewModel, onBack: () -> Unit = {}) {
                                 }
                                 
                                 val rows = mutableListOf<List<String>>()
-                                rows.add(listOf("Timestamp", "Type", "Product Name", "Notes", "Price", "Customer Type", "Lost Reason", "Credited To", "Credited From"))
                                 val currentProducts = viewModel.allProducts.value
                                 val currentColleagues = viewModel.allColleagues.value
-                                for (activity in filteredActivities) {
-                                    val prodName = currentProducts.find { it.id == activity.productId }?.name ?: ""
-                                    val toName = currentColleagues.find { it.id == activity.creditedToId }?.name ?: ""
-                                    val fromName = currentColleagues.find { it.id == activity.creditedFromId }?.name ?: ""
-                                    
-                                    val row = listOf(
-                                        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(activity.timestamp)),
-                                        activity.type,
-                                        prodName,
-                                        activity.notes ?: "",
-                                        activity.price?.toLong()?.toString() ?: "",
-                                        activity.customerType ?: "",
-                                        activity.lostReason ?: "",
-                                        toName,
-                                        fromName
-                                    )
-                                    rows.add(row)
-                                }
                                 
+                                rows.add(listOf("Report", "Sales Performance"))
+                                rows.add(listOf("Timeframe", time))
+                                rows.add(listOf())
+                                
+                                rows.add(listOf("Timestamp", "Shift (Clock In - Clock Out)", "Type", "Product Name", "Price per Item", "QTY", "Discount (%)", "Final Price", "Credit To", "Credit From"))
+                                
+                                var totalHariMasuk = 0
+                                var totalPenjualan = 0.0
+
+                                val dailyGroup = filteredActivities.groupBy { 
+                                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(it.timestamp)) 
+                                }
+
+                                for ((date, acts) in dailyGroup.toSortedMap()) {
+                                    val clockIn = acts.find { it.type == "CLOCK_IN" }
+                                    val clockOut = acts.find { it.type == "CLOCK_OUT" }
+                                    val timeStrIn = clockIn?.let { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it.timestamp)) } ?: "-"
+                                    val timeStrOut = clockOut?.let { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it.timestamp)) } ?: "-"
+                                    val shiftRecord = "In: $timeStrIn - Out: $timeStrOut"
+                                    
+                                    if (clockIn != null && clockOut != null) {
+                                        val durationHours = (clockOut.timestamp - clockIn.timestamp) / 3600000.0
+                                        if (durationHours >= 8.0) {
+                                            totalHariMasuk++
+                                        }
+                                    }
+
+                                    for (act in acts) {
+                                        if (act.type == "SALE") {
+                                            totalPenjualan += (act.finalPrice ?: act.price ?: 0.0)
+                                        }
+
+                                        val timeStr = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(act.timestamp))
+                                        val prodName = currentProducts.find { it.id == act.productId }?.name ?: "-"
+                                        val toName = if (act.creditedToId != null) currentColleagues.find { it.id == act.creditedToId }?.name ?: "-" else "-"
+                                        val fromName = if (act.creditedFromId != null) currentColleagues.find { it.id == act.creditedFromId }?.name ?: "-" else "-"
+                                        val priceStr = act.price?.toLong()?.toString() ?: "-"
+                                        val qtyStr = act.quantity?.toString() ?: "-"
+                                        val discStr = act.discount?.toString() ?: "-"
+                                        val finalPriceStr = act.finalPrice?.toLong()?.toString() ?: "-"
+                                        
+                                        rows.add(listOf(
+                                            timeStr,
+                                            shiftRecord,
+                                            act.type,
+                                            if (act.type == "SALE" || act.type == "INTEREST") prodName else "-",
+                                            if (act.type == "SALE") priceStr else "-",
+                                            if (act.type == "SALE") qtyStr else "-",
+                                            if (act.type == "SALE") discStr else "-",
+                                            if (act.type == "SALE") finalPriceStr else "-",
+                                            toName,
+                                            fromName
+                                        ))
+                                    }
+                                }
+
+                                rows.add(listOf())
+                                rows.add(listOf("Total Hari Masuk", totalHariMasuk.toString()))
+                                rows.add(listOf("Total Penjualan", totalPenjualan.toLong().toString()))
+
                                 previewData = rows
                                 currentReportType = reportType
                                 showPreviewModal = true
@@ -572,22 +639,10 @@ fun ExportOptionsGrid(onExportClick: (String) -> Unit = {}) {
 
     Column(verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.lg)) {
         ExportItemCard(
-            title = "Evidence Report",
-            subtitle = "CSV • Timestamped format",
+            title = "Sales Performance",
+            subtitle = "CSV • Laporan Rekap Penjualan",
             icon = Icons.Outlined.Description,
-            onClick = { handleClick("Evidence Report") }
-        )
-        ExportItemCard(
-            title = "Personal Sales Ledger",
-            subtitle = "CSV • Excel / Spreadsheet",
-            icon = Icons.Outlined.List,
-            onClick = { handleClick("Personal Sales Ledger") }
-        )
-        ExportItemCard(
-            title = "Monthly Performance",
-            subtitle = "CSV • Detailed Analytics",
-            icon = Icons.Outlined.DateRange,
-            onClick = { handleClick("Monthly Performance") }
+            onClick = { handleClick("Sales Performance") }
         )
     }
 }

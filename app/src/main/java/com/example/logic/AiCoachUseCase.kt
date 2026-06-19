@@ -31,19 +31,23 @@ object AiCoachUseCase {
 
         val format = java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.getDefault())
         val activitiesSummary = activities.takeLast(10).joinToString("\n") {
-            "- ${format.format(java.util.Date(it.timestamp))}: ${it.type} ${it.notes ?: ""} | Rp ${it.price ?: 0.0}"
+            "- ${format.format(java.util.Date(it.timestamp))}: ${it.type} ${it.notes ?: ""} | Rp ${it.finalPrice ?: it.price ?: 0.0}"
         }
+        val shiftsCount = activities.count { it.type == "CLOCK_IN" }
 
         val prompt = """
             Kamu adalah AI Coach berbahasa Indonesia untuk seorang Sales Executive jam tangan Casio.
-            Berikut adalah data penjualan bulan ini:
+            Berikut adalah data performa saat ini (menyesuaikan rentang waktu perhitungan perusahaan 10 sampai 10):
             - Target Personal: Rp $target
             - Pencapaian Saat Ini: Rp $revenue ($targetHit%)
             
-            Berikut adalah 10 aktivitas toko terakhir:
+            Informasi Shift / Kehadiran:
+            - Jumlah Shift Masuk (CLOCK_IN): $shiftsCount
+            
+            Berikut adalah 10 aktivitas (shift & operasional/sales) terakhir:
             $activitiesSummary
             
-            Berdasarkan data di atas, tolong berikan coaching advice, rangkuman performa singkat, dan rekomendasikan topik edukasi (knowledge gaps) untuk memacu sales ini belajar hal baru.
+            Berdasarkan data di atas (khususnya perhatikan keteraturan/konsistensi shift dan pencapaian sales), tolong berikan coaching advice singkat, rangkuman performa, dan rekomendasikan topik edukasi (knowledge gaps).
             
             Kembalikan response HANYA dalam format JSON berikut (tanpa blok ```json):
             {

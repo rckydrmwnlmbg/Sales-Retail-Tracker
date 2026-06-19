@@ -62,19 +62,13 @@ class MainActivity : ComponentActivity() {
         val mainViewModel: MainViewModel = viewModel(
             factory = MainViewModelFactory(app.repository, prefs)
         )
-        val themeMode by mainViewModel.themeMode.collectAsState(initial = 0)
-
-        MyApplicationTheme(themeMode = themeMode) {
+        MyApplicationTheme {
           val hazeState = androidx.compose.runtime.remember { HazeState() }
           CompositionLocalProvider(LocalHazeState provides hazeState) {
           val navController = rememberNavController()
           val navBackStackEntry by navController.currentBackStackEntryAsState()
           val currentRoute = navBackStackEntry?.destination?.route
-        val isDarkTheme = when (themeMode) {
-          1 -> true
-          2 -> false
-          else -> androidx.compose.foundation.isSystemInDarkTheme()
-        }
+        val isDarkTheme = true
 
         val darkBackground = androidx.compose.ui.graphics.Brush.verticalGradient(
             colors = listOf(

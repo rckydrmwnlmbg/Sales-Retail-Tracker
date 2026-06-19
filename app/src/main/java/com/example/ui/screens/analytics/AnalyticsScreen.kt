@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,15 +66,38 @@ fun AnalyticsScreen(viewModel: MainViewModel) {
                     diff in 0..(7L * 24 * 60 * 60 * 1000)
                 }
                 else -> {
-                    cal.get(java.util.Calendar.MONTH) == now.get(java.util.Calendar.MONTH) &&
-                    cal.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR)
+                    val today = now.get(java.util.Calendar.DAY_OF_MONTH)
+                    val startCal = java.util.Calendar.getInstance()
+                    val endCal = java.util.Calendar.getInstance()
+                    if (today >= 10) {
+                        startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                        startCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                        startCal.set(java.util.Calendar.MINUTE, 0)
+                        startCal.set(java.util.Calendar.SECOND, 0)
+                        endCal.add(java.util.Calendar.MONTH, 1)
+                        endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                        endCal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                        endCal.set(java.util.Calendar.MINUTE, 59)
+                        endCal.set(java.util.Calendar.SECOND, 59)
+                    } else {
+                        startCal.add(java.util.Calendar.MONTH, -1)
+                        startCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                        startCal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                        startCal.set(java.util.Calendar.MINUTE, 0)
+                        startCal.set(java.util.Calendar.SECOND, 0)
+                        endCal.set(java.util.Calendar.DAY_OF_MONTH, 10)
+                        endCal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                        endCal.set(java.util.Calendar.MINUTE, 59)
+                        endCal.set(java.util.Calendar.SECOND, 59)
+                    }
+                    activity.timestamp in startCal.timeInMillis..endCal.timeInMillis
                 }
             }
         }
     }
 
     val revenue = remember(filteredActivities) {
-        filteredActivities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
+        filteredActivities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     }
     val transactions = remember(filteredActivities) {
         filteredActivities.count { it.type == "SALE" && it.creditedToId == null }
@@ -137,6 +160,11 @@ fun AnalyticsScreen(viewModel: MainViewModel) {
             item {
                 SectionTitle("CONVERSION FUNNEL")
                 ConversionFunnel(filteredActivities)
+            }
+
+            item {
+                SectionTitle("SHIFT & ATTENDANCE")
+                ShiftAnalytics(filteredActivities)
             }
 
             item {
@@ -364,7 +392,7 @@ fun AnalyticsHeaderCollapsed(
 fun RevenueChart(activities: List<com.example.data.local.entity.ActivityEntity>, selectedPeriod: Int) {
     val bodyColor = MaterialTheme.colorScheme.onBackground
 
-    val revenue = activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
+    val revenue = activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
     val sales = activities.filter { it.type == "SALE" }.sortedBy { it.timestamp }
@@ -452,7 +480,7 @@ fun MetricsGrid(activities: List<com.example.data.local.entity.ActivityEntity>) 
     val salesCount = activities.count { it.type == "SALE" }.toFloat()
     val conv = if (interests > 0) (salesCount / interests * 100) else 0f
     
-    val rev = activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
+    val rev = activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     val avg = if (salesCount > 0) rev / salesCount else 0.0
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
@@ -563,7 +591,7 @@ fun ProductAnalytics(activities: List<com.example.data.local.entity.ActivityEnti
         .groupBy { it.productId }
         .map { (prodId, acts) ->
             val pName = products.find { it.id == prodId }?.name ?: "Unknown Product"
-            val revenue = acts.sumOf { it.price ?: 0.0 }
+            val revenue = acts.sumOf { it.finalPrice ?: it.price ?: 0.0 }
             val count = acts.size
             Triple(pName, revenue, count)
         }
@@ -601,8 +629,8 @@ fun ProductItem(name: String, revenue: String, units: String) {
 fun AttributionAnalytics(activities: List<com.example.data.local.entity.ActivityEntity>) {
     val sales = activities.filter { it.type == "SALE" }
     
-    val actualRevenue = sales.filter { it.creditedToId == null }.sumOf { it.price ?: 0.0 }
-    val givenRevenue = sales.filter { it.creditedToId != null }.sumOf { it.price ?: 0.0 }
+    val actualRevenue = sales.filter { it.creditedToId == null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
+    val givenRevenue = sales.filter { it.creditedToId != null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     val officialRevenue = actualRevenue + givenRevenue
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
 
@@ -651,7 +679,7 @@ fun WinLossAnalysis(activities: List<com.example.data.local.entity.ActivityEntit
             } else {
                 reasons.forEach { entry ->
                     val pct = entry.value.toFloat() / totalLost
-                    MissReason(entry.key, pct, bodyColor)
+                    MissReason(entry.key, pct, entry.value)
                 }
             }
         }
@@ -659,11 +687,25 @@ fun WinLossAnalysis(activities: List<com.example.data.local.entity.ActivityEntit
 }
 
 @Composable
-fun MissReason(reason: String, percentage: Float, bodyColor: Color) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = com.example.ui.theme.AppSpacing.xs), verticalAlignment = Alignment.CenterVertically) {
-        Text(reason, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.6f), modifier = Modifier.weight(1f))
-        Spacer(modifier = Modifier.width(com.example.ui.theme.AppSpacing.md))
-        Text("${(percentage * 100).toInt()}%", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+fun MissReason(reason: String, percentage: Float, value: Int) {
+    val bodyColor = MaterialTheme.colorScheme.onBackground
+    val color = MaterialTheme.colorScheme.error
+
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.MoneyOff, contentDescription=null, tint=color, modifier=Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(reason, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+            }
+            Text("${(percentage * 100).toInt()}% ($value)", style = MaterialTheme.typography.titleMedium, color = color, fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(bodyColor.copy(alpha = 0.1f))) {
+            androidx.compose.animation.AnimatedVisibility(visible = true) {
+                 Box(modifier = Modifier.fillMaxWidth(percentage).fillMaxHeight().background(color))
+            }
+        }
     }
 }
 
@@ -682,14 +724,10 @@ fun KnowledgeGapAnalysis(activities: List<com.example.data.local.entity.Activity
             if (topQuestions.isEmpty()) {
                 Text("No data available yet.", style = MaterialTheme.typography.bodyMedium, color = bodyColor.copy(alpha=0.5f))
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.sm)) {
-                    val chunks = topQuestions.chunked(2)
-                    chunks.forEach { chunk ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.AppSpacing.sm)) {
-                            chunk.forEach { entry ->
-                                KnowledgeGapPill("${entry.key} (${entry.value})", bodyColor)
-                            }
-                        }
+                val maxQuestions = topQuestions.maxOf { it.value }.toFloat().coerceAtLeast(1f)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    topQuestions.forEach { entry ->
+                        KnowledgeGapItem(entry.key, entry.value, entry.value.toFloat() / maxQuestions)
                     }
                 }
             }
@@ -698,13 +736,63 @@ fun KnowledgeGapAnalysis(activities: List<com.example.data.local.entity.Activity
 }
 
 @Composable
-fun KnowledgeGapPill(topic: String, bodyColor: Color) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(bodyColor.copy(alpha = 0.1f))
-            .padding(horizontal = com.example.ui.theme.AppSpacing.md, vertical = 6.dp)
-    ) {
-        Text(topic, style = MaterialTheme.typography.labelSmall, color = bodyColor.copy(alpha = 0.8f))
+fun KnowledgeGapItem(topic: String, count: Int, relativePercentage: Float) {
+    val color = Color(0xFF00D4FF)
+    val bodyColor = MaterialTheme.colorScheme.onBackground
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.LightbulbCircle, contentDescription=null, tint=color, modifier=Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(topic, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+            }
+            Text("$count", style = MaterialTheme.typography.titleMedium, color = color, fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Box(modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(bodyColor.copy(alpha = 0.1f))) {
+            Box(modifier = Modifier.fillMaxWidth(relativePercentage).fillMaxHeight().background(color))
+        }
+    }
+}
+
+@Composable
+fun ShiftAnalytics(activities: List<com.example.data.local.entity.ActivityEntity>) {
+    val clockIns = activities.count { it.type == "CLOCK_IN" }
+    val clockOuts = activities.count { it.type == "CLOCK_OUT" }
+    val bodyColor = MaterialTheme.colorScheme.onBackground
+    
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        com.example.ui.components.GlassCard(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Shifts Started", 
+                    style = MaterialTheme.typography.labelMedium,
+                    color = bodyColor.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "$clockIns", 
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = bodyColor
+                )
+            }
+        }
+        com.example.ui.components.GlassCard(modifier = Modifier.weight(1f)) {
+             Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Shifts Ended", 
+                    style = MaterialTheme.typography.labelMedium,
+                    color = bodyColor.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "$clockOuts", 
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = bodyColor
+                )
+            }
+        }
     }
 }

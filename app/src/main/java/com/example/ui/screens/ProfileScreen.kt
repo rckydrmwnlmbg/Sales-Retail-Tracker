@@ -75,12 +75,6 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
     val supabaseUrl by viewModel.supabaseUrl.collectAsState()
     val supabaseKey by viewModel.supabaseKey.collectAsState()
 
-    val themeMode by viewModel.themeMode.collectAsState()
-    val isDarkTheme = when(themeMode) {
-        1 -> true
-        2 -> false
-        else -> androidx.compose.foundation.isSystemInDarkTheme()
-    }
     val onBg = MaterialTheme.colorScheme.onBackground
     val sectionHeaderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
 
@@ -260,22 +254,28 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                     }
                 )
             }
-            // Security feature item removed since it was just a mock UI
             item {
-                val themeName = if (isDarkTheme) "Cosmic Dark" else "Stellar Bright"
                 SettingItemCard(
-                    
-                    icon = Icons.Outlined.DarkMode,
-                    title = "App Theme",
-                    subtitle = "Currently using $themeName",
+                    icon = Icons.Outlined.FileDownload,
+                    title = "Import Data from Cloud",
+                    subtitle = "Tarik ulang data dari Supabase ke device ini",
                     onClick = { 
-                        val newMode = if (isDarkTheme) 2 else 1 // toggle mode 1 and 2
-                        viewModel.setThemeMode(newMode)
-                        val newThemeName = if (newMode == 1) "Cosmic Dark" else "Stellar Bright"
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Theme changed to $newThemeName") }
+                        val job = coroutineScope.launch { snackbarHostState.showSnackbar("Memulai proses tarik data...") }
+                        viewModel.restoreDataFromCloud(supabaseUrl, supabaseKey) { success, msg ->
+                            job.cancel()
+                            coroutineScope.launch {
+                                snackbarHostState.currentSnackbarData?.dismiss()
+                                if (success) {
+                                    snackbarHostState.showSnackbar(message = "Import berhasil! Data telah direstore.", duration = androidx.compose.material3.SnackbarDuration.Long)
+                                } else {
+                                    snackbarHostState.showSnackbar(message = "Gagal: $msg", duration = androidx.compose.material3.SnackbarDuration.Long)
+                                }
+                            }
+                        }
                     }
                 )
             }
+            // Security feature item removed since it was just a mock UI
             item {
                 SettingItemCard(
                     
@@ -288,7 +288,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
 
             item {
                 Text(
-                    text = "RECENT ACTIVITY LOGS",
+                    text = "RECENT SHIFT HISTORY",
                     color = sectionHeaderColor,
                     letterSpacing = 1.5.sp,
                     fontSize = 14.sp,
@@ -297,15 +297,14 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                 )
             }
             
-            val recentLogs = activities.sortedByDescending { it.timestamp }.take(5)
-            if (recentLogs.isEmpty()) {
+            val recentShifts = activities.filter { it.type == "CLOCK_IN" || it.type == "CLOCK_OUT" }.sortedByDescending { it.timestamp }.take(5)
+            if (recentShifts.isEmpty()) {
                 item {
-                    Text("No activities recorded yet.", color = onBg.copy(alpha=0.5f), fontSize=14.sp)
+                    Text("No shift history recorded yet.", color = onBg.copy(alpha=0.5f), fontSize=14.sp)
                 }
             } else {
-                items(recentLogs.size) { index ->
-                    val log = recentLogs[index]
-                    val pName = products.find { it.id == log.productId }?.name ?: "General Activity"
+                items(recentShifts.size) { index ->
+                    val log = recentShifts[index]
                     val sf = SimpleDateFormat("dd MMM yy HH:mm", Locale.getDefault())
                     val dateStr = sf.format(Date(log.timestamp))
                     
@@ -329,7 +328,7 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigate: (String) -> Unit) {
                                     Text(text = dateStr, color = onBg.copy(alpha=0.5f), fontSize = 12.sp)
                                 }
                             }
-                            Text(text = pName, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Medium, fontSize = 13.sp, modifier = Modifier.weight(1f, fill=false), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text(text = log.notes ?: "-", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                         }
                     }
                 }

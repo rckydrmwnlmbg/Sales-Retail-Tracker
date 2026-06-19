@@ -12,6 +12,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProduct(product: ProductEntity)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertProducts(products: List<ProductEntity>)
 
     // Colleagues
     @Query("SELECT * FROM colleagues ORDER BY name ASC")
@@ -19,6 +22,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertColleague(colleague: ColleagueEntity)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertColleagues(colleagues: List<ColleagueEntity>)
 
     // Activities
     @Query("SELECT * FROM activities ORDER BY timestamp DESC")
@@ -26,6 +32,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertActivity(activity: ActivityEntity)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertActivities(activities: List<ActivityEntity>)
     
     @Delete
     suspend fun deleteActivity(activity: ActivityEntity)
@@ -39,6 +48,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGoal(goal: GoalEntity)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGoals(goals: List<GoalEntity>)
 
     @Delete
     suspend fun deleteGoal(goal: GoalEntity)

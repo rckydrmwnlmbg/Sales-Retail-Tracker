@@ -174,7 +174,7 @@ fun JournalScreen(viewModel: MainViewModel) {
                         else -> "Catatan Cepat"
                     }
                     val details = entry.notes?.takeIf { it.isNotBlank() } ?: "Tidak ada catatan detail."
-                    val amount = if (entry.type == "SALE" && entry.price != null && entry.price > 0.0) NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(entry.price) else null
+                    val amount = if (entry.type == "SALE" && (entry.finalPrice ?: entry.price) != null && (entry.finalPrice ?: entry.price)!! > 0.0) NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(entry.finalPrice ?: entry.price) else null
                     val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(entry.timestamp))
 
                     JournalEntryCard(

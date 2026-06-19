@@ -306,9 +306,11 @@ fun ManageProductsScreen(
                     onClick = {
                         coroutineScope.launch {
                             for (sp in result.products) {
-                                viewModel.addOrUpdateProduct(sp.toProductEntity())
+                                viewModel.addOrUpdateProduct(sp.toProductEntity()) { errorMsg ->
+                                    coroutineScope.launch { snackbarHostState.showSnackbar(errorMsg) }
+                                }
                             }
-                            snackbarHostState.showSnackbar("Berhasil menambahkan ${result.products.size} produk.")
+                            snackbarHostState.showSnackbar("Proses selesai. Produk tersimpan.")
                             showScanResultDialog = false
                         }
                     },
@@ -345,7 +347,9 @@ fun ManageProductsScreen(
             initialProduct = selectedProduct,
             onDismiss = { showDialog = false },
             onSave = {
-                viewModel.addOrUpdateProduct(it)
+                viewModel.addOrUpdateProduct(it) { errorMsg ->
+                    coroutineScope.launch { snackbarHostState.showSnackbar(errorMsg) }
+                }
                 showDialog = false
             }
         )
@@ -366,7 +370,8 @@ fun ProductItem(product: ProductEntity, onEdit: () -> Unit, onDelete: () -> Unit
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = product.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                 Text(text = "Code: ${product.code} | Category: ${product.category}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(text = "Rp ${product.normalPrice}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                val formattedPrice = java.text.NumberFormat.getIntegerInstance(java.util.Locale("id", "ID")).format(product.normalPrice)
+                Text(text = "Rp $formattedPrice", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = onEdit) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurface)

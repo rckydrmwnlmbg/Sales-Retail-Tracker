@@ -57,25 +57,16 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun MyApplicationTheme(
-  themeMode: Int = 0, // 0 = System, 1 = Dark, 2 = Light
   dynamicColor: Boolean = false,
   content: @Composable () -> Unit,
 ) {
-  val darkTheme = when (themeMode) {
-      1 -> true
-      2 -> false
-      else -> isSystemInDarkTheme()
-  }
-
   val colorScheme =
     when {
       dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
         val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        dynamicDarkColorScheme(context)
       }
-
-      darkTheme -> DarkColorScheme
-      else -> LightColorScheme
+      else -> DarkColorScheme
     }
 
   MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)

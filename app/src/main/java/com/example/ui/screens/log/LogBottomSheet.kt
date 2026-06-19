@@ -55,6 +55,8 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
     val colleagues by viewModel.allColleagues.collectAsState()
     
     var price by remember { mutableStateOf("") }
+    var quantity by remember { mutableStateOf("1") }
+    var discount by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var selectedProduct by remember { mutableStateOf<Int?>(null) }
     var creditedToId by remember { mutableStateOf<Int?>(null) }
@@ -101,13 +103,13 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val chunks = types.chunked(4)
+            val chunks = types.chunked(2)
             chunks.forEach { rowTypes ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     rowTypes.forEach { (name, icon, strokeColor) ->
                         val isSelected = selectedType == name
@@ -115,21 +117,20 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
                         val activeBgColor = MaterialTheme.colorScheme.primaryContainer
                         val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                         
-                        Column(
+                        Row(
                             modifier = Modifier
                                 .weight(1f)
-                                .aspectRatio(1f)
+                                .height(64.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (isSelected) activeBgColor else bgColor)
                                 .border(1.dp, borderColor, RoundedCornerShape(12.dp))
                                 .clickable { selectedType = name }
-                                .padding(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                                .padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = icon, contentDescription = name, tint = strokeColor, modifier = Modifier.size(28.dp))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = name, color = bodyColor, fontSize = 10.sp, fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Normal, textAlign = TextAlign.Center, lineHeight = 12.sp)
+                            Icon(imageVector = icon, contentDescription = name, tint = strokeColor, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(text = name, color = bodyColor, fontSize = 12.sp, fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Medium, maxLines = 2, lineHeight = 14.sp)
                         }
                     }
                 }
@@ -147,23 +148,50 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
 
             if (selectedType == "Sale" || selectedType == "Customer Interest" || selectedType == "Lost Opportunity" || selectedType == "Product Availability") {
                 var expanded by remember { mutableStateOf(false) }
+                var productSearchText by remember { mutableStateOf("") }
+                
+                LaunchedEffect(selectedProduct) {
+                    if (!expanded) {
+                        productSearchText = products.find { it.id == selectedProduct }?.name ?: ""
+                    }
+                }
+                
+                val filteredProducts = remember(productSearchText, products) {
+                    if (productSearchText.isBlank()) products else products.filter { it.name.contains(productSearchText, ignoreCase = true) }
+                }
+
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
-                        value = products.find { it.id == selectedProduct }?.name ?: "",
-                        onValueChange = {}, readOnly = true, label = { Text("Pilih Produk") },
+                        value = productSearchText,
+                        onValueChange = { 
+                            productSearchText = it
+                            if (!expanded) expanded = true
+                        },
+                        label = { Text("Pilih Produk (Ketik untuk mencari)") },
                         modifier = Modifier.fillMaxWidth().menuAnchor(), colors = fieldColors, shape = RoundedCornerShape(12.dp),
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        singleLine = true
                     )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        products.forEach { prod ->
-                            DropdownMenuItem(
-                                text = { Text(prod.name) }, 
-                                onClick = { 
-                                    selectedProduct = prod.id
-                                    if (selectedType == "Sale") price = prod.normalPrice.toInt().toString()
-                                    expanded = false 
+                    if (expanded) {
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { 
+                            expanded = false 
+                            productSearchText = products.find { it.id == selectedProduct }?.name ?: ""
+                        }) {
+                            if (filteredProducts.isEmpty()) {
+                                DropdownMenuItem(text = { Text("No products found", color = bodyColor.copy(alpha=0.5f)) }, onClick = { })
+                            } else {
+                                filteredProducts.forEach { prod ->
+                                    DropdownMenuItem(
+                                        text = { Text(prod.name) }, 
+                                        onClick = { 
+                                            selectedProduct = prod.id
+                                            productSearchText = prod.name
+                                            if (selectedType == "Sale") price = prod.normalPrice.toInt().toString()
+                                            expanded = false 
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
@@ -171,11 +199,32 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
             }
             if (selectedType == "Sale") {
                 OutlinedTextField(
-                    value = price, onValueChange = { price = it }, label = { Text("Deal Price (Rp)") },
+                    value = price, onValueChange = { price = it }, label = { Text("Deal Price per item (Rp)") },
                     modifier = Modifier.fillMaxWidth(), colors = fieldColors, shape = RoundedCornerShape(12.dp), singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = quantity, onValueChange = { quantity = it }, label = { Text("QTY") },
+                        modifier = Modifier.weight(1f), colors = fieldColors, shape = RoundedCornerShape(12.dp), singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                    )
+                    OutlinedTextField(
+                        value = discount, onValueChange = { discount = it }, label = { Text("Discount (%)") },
+                        modifier = Modifier.weight(1f), colors = fieldColors, shape = RoundedCornerShape(12.dp), singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val computedPrice = (price.toDoubleOrNull() ?: 0.0) * (quantity.toIntOrNull() ?: 1) * (1.0 - (discount.toDoubleOrNull() ?: 0.0) / 100.0)
+                if (computedPrice > 0.0) {
+                    val formattedFinal = java.text.NumberFormat.getIntegerInstance(java.util.Locale("id", "ID")).format(computedPrice)
+                    Text(text = "Final Price: Rp $formattedFinal", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(start = 4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 
                 var colExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(expanded = colExpanded, onExpandedChange = { colExpanded = it }) {
@@ -247,12 +296,16 @@ fun LogBottomSheet(viewModel: MainViewModel, onDismiss: () -> Unit) {
                             "Learning Note" -> "LEARNING"
                             else -> "QUICK_NOTE"
                         }
+                        val finalP = (price.toDoubleOrNull() ?: 0.0) * (quantity.toIntOrNull() ?: 1) * (1.0 - (discount.toDoubleOrNull() ?: 0.0) / 100.0)
                         viewModel.addActivity(
                             ActivityEntity(
                                 type = typeEnum,
                                 timestamp = System.currentTimeMillis(),
                                 productId = selectedProduct,
                                 price = price.toDoubleOrNull() ?: 0.0,
+                                quantity = quantity.toIntOrNull() ?: 1,
+                                discount = discount.toDoubleOrNull() ?: 0.0,
+                                finalPrice = finalP,
                                 creditedToId = creditedToId,
                                 creditedFromId = creditedFromId,
                                 notes = note

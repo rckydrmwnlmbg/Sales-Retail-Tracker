@@ -12,7 +12,10 @@ data class ActivityEntity(
     
     // Core Sale Info
     val productId: Int? = null,
-    val price: Double? = null,
+    val price: Double? = null, // original price
+    val quantity: Int? = null,
+    val discount: Double? = null, // discount in percentage
+    val finalPrice: Double? = null,
     val creditedToId: Int? = null,
     val creditedFromId: Int? = null,
     

@@ -63,6 +63,8 @@ fun LogActivityScreen(viewModel: MainViewModel) {
     // Sale Form State
     var saleProductId by remember { mutableStateOf<Int?>(null) }
     var salePrice by remember { mutableStateOf("") }
+    var saleQuantity by remember { mutableStateOf("1") }
+    var saleDiscount by remember { mutableStateOf("") }
     var saleCreditedToId by remember { mutableStateOf<Int?>(null) } // null = Me
     var saleCreditedFromId by remember { mutableStateOf<Int?>(null) } // null = Me
     var saleNotes by remember { mutableStateOf("") }
@@ -148,6 +150,10 @@ fun LogActivityScreen(viewModel: MainViewModel) {
                             },
                             price = salePrice,
                             onPriceChange = { salePrice = it },
+                            quantity = saleQuantity,
+                            onQuantityChange = { saleQuantity = it },
+                            discount = saleDiscount,
+                            onDiscountChange = { saleDiscount = it },
                             creditedToId = saleCreditedToId,
                             onCreditedToChange = { saleCreditedToId = it },
                             creditedFromId = saleCreditedFromId,
@@ -192,11 +198,15 @@ fun LogActivityScreen(viewModel: MainViewModel) {
 
                             // Construct Entity
                             val entity = if (selectedTab == "Sale") {
+                                val finalP = (salePrice.toDoubleOrNull() ?: 0.0) * (saleQuantity.toIntOrNull() ?: 1) * (1.0 - (saleDiscount.toDoubleOrNull() ?: 0.0) / 100.0)
                                 ActivityEntity(
                                     type = "SALE",
                                     timestamp = timestamp,
                                     productId = saleProductId,
                                     price = salePrice.toDoubleOrNull() ?: 0.0,
+                                    quantity = saleQuantity.toIntOrNull() ?: 1,
+                                    discount = saleDiscount.toDoubleOrNull() ?: 0.0,
+                                    finalPrice = finalP,
                                     creditedToId = saleCreditedToId,
                                     creditedFromId = saleCreditedFromId,
                                     notes = saleNotes
@@ -237,7 +247,7 @@ fun LogActivityScreen(viewModel: MainViewModel) {
                                 showSuccess = false
                                 
                                 // Reset fields
-                                saleProductId = null; salePrice = ""; saleNotes = ""; saleCreditedToId = null
+                                saleProductId = null; salePrice = ""; saleQuantity = "1"; saleDiscount = ""; saleNotes = ""; saleCreditedToId = null
                                 nsProductId = null; nsNotes = ""; nsCategoryDropdown = ""; nsCustomerType = ""; nsTopic = ""; nsLearningContext = ""
                                 nonSaleCategory = null
                             }
@@ -286,6 +296,8 @@ fun SaleForm(
     products: List<com.example.data.local.entity.ProductEntity>, colleagues: List<com.example.data.local.entity.ColleagueEntity>,
     productId: Int?, onProductChange: (com.example.data.local.entity.ProductEntity) -> Unit,
     price: String, onPriceChange: (String) -> Unit,
+    quantity: String, onQuantityChange: (String) -> Unit,
+    discount: String, onDiscountChange: (String) -> Unit,
     creditedToId: Int?, onCreditedToChange: (Int?) -> Unit,
     creditedFromId: Int?, onCreditedFromChange: (Int?) -> Unit,
     notes: String, onNotesChange: (String) -> Unit
@@ -305,27 +317,85 @@ fun SaleForm(
                 unfocusedLabelColor = onBg.copy(alpha = 0.7f), focusedLabelColor = NeonCyan, cursorColor = NeonCyan
             )
 
+            var productSearchText by remember { mutableStateOf(products.find { it.id == productId }?.name ?: "") }
+            
+            LaunchedEffect(productId) {
+                if (!productDropdownExpanded) {
+                    productSearchText = products.find { it.id == productId }?.name ?: ""
+                }
+            }
+
+            val filteredProducts = remember(productSearchText, products) {
+                if (productSearchText.isBlank()) products else products.filter { it.name.contains(productSearchText, ignoreCase = true) }
+            }
+
             // Product Dropdown
             ExposedDropdownMenuBox(expanded = productDropdownExpanded, onExpandedChange = { productDropdownExpanded = it }) {
                 OutlinedTextField(
-                    value = products.find { it.id == productId }?.name ?: "",
-                    onValueChange = {}, readOnly = true, label = { Text("Product Selection") },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(), colors = colors,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productDropdownExpanded) }
+                    value = productSearchText,
+                    onValueChange = { 
+                        productSearchText = it
+                        if (!productDropdownExpanded) productDropdownExpanded = true
+                    },
+                    label = { Text("Product Search (Ketik untuk mencari)") },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = colors,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productDropdownExpanded) },
+                    singleLine = true
                 )
-                ExposedDropdownMenu(expanded = productDropdownExpanded, onDismissRequest = { productDropdownExpanded = false }) {
-                    products.forEach { prod ->
-                        DropdownMenuItem(text = { Text(prod.name) }, onClick = { onProductChange(prod); productDropdownExpanded = false })
+                if (productDropdownExpanded) {
+                    ExposedDropdownMenu(
+                        expanded = productDropdownExpanded, 
+                        onDismissRequest = { 
+                            productDropdownExpanded = false
+                            productSearchText = products.find { it.id == productId }?.name ?: ""
+                        }
+                    ) {
+                        if (filteredProducts.isEmpty()) {
+                            DropdownMenuItem(text = { Text("No products found", color = onBg.copy(alpha=0.5f)) }, onClick = { })
+                        } else {
+                            filteredProducts.forEach { prod ->
+                                val formattedPrice = java.text.NumberFormat.getIntegerInstance(java.util.Locale("id", "ID")).format(prod.normalPrice)
+                                DropdownMenuItem(
+                                    text = { Text("${prod.name} - Rp $formattedPrice") }, 
+                                    onClick = { 
+                                        onProductChange(prod)
+                                        productSearchText = prod.name
+                                        productDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
 
             // Price
             OutlinedTextField(
-                value = price, onValueChange = onPriceChange, label = { Text("Deal Price (Rp)") },
+                value = price, onValueChange = onPriceChange, label = { Text("Deal Price per item (Rp)") },
                 modifier = Modifier.fillMaxWidth(), colors = colors, singleLine = true,
+                leadingIcon = { Text("Rp ", color = NeonCyan, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp)) },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
             )
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = quantity, onValueChange = onQuantityChange, label = { Text("QTY") },
+                    modifier = Modifier.weight(1f), colors = colors, singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                )
+                OutlinedTextField(
+                    value = discount, onValueChange = onDiscountChange, label = { Text("Discount (%)") },
+                    modifier = Modifier.weight(1f), colors = colors, singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                )
+            }
+            
+            val computedPrice = (price.toDoubleOrNull() ?: 0.0) * (quantity.toIntOrNull() ?: 1) * (1.0 - (discount.toDoubleOrNull() ?: 0.0) / 100.0)
+            if (computedPrice > 0.0) {
+                val formattedFinal = java.text.NumberFormat.getIntegerInstance(java.util.Locale("id", "ID")).format(computedPrice)
+                Text(text = "Final Price: Rp $formattedFinal", color = NeonCyan, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+            }
 
             // Credited To
             ExposedDropdownMenuBox(expanded = colleagueDropdownExpanded, onExpandedChange = { colleagueDropdownExpanded = it }) {
@@ -333,6 +403,7 @@ fun SaleForm(
                     value = if (creditedToId == null) "Me / Current User" else colleagues.find { it.id == creditedToId }?.name ?: "",
                     onValueChange = {}, readOnly = true, label = { Text("Credited To") },
                     modifier = Modifier.fillMaxWidth().menuAnchor(), colors = colors,
+                    leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = NeonCyan) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = colleagueDropdownExpanded) },
                     enabled = creditedFromId == null // Cannot credit to someone else if someone credited to me
                 )
@@ -350,6 +421,7 @@ fun SaleForm(
                     value = if (creditedFromId == null) "Me / Current User" else colleagues.find { it.id == creditedFromId }?.name ?: "",
                     onValueChange = {}, readOnly = true, label = { Text("Sale Made By (Credited From)") },
                     modifier = Modifier.fillMaxWidth().menuAnchor(), colors = colors,
+                    leadingIcon = { Icon(Icons.Outlined.PersonSearch, contentDescription = null, tint = NeonCyan) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = creditedFromDropdownExpanded) },
                     enabled = creditedToId == null // Cannot have someone credit to me if I am crediting to someone else
                 )
@@ -363,12 +435,14 @@ fun SaleForm(
 
             // Timestamp
             OutlinedTextField(
-                value = formatter.format(Date()), onValueChange = {}, label = { Text("Timestamp (Tercatat Otomatis)") }, readOnly = true, modifier = Modifier.fillMaxWidth(), colors = colors
+                value = formatter.format(Date()), onValueChange = {}, label = { Text("Timestamp (Tercatat Otomatis)") }, readOnly = true, modifier = Modifier.fillMaxWidth(), colors = colors,
+                leadingIcon = { Icon(Icons.Outlined.Event, contentDescription = null, tint = NeonCyan) }
             )
 
             // Notes
             OutlinedTextField(
-                value = notes, onValueChange = onNotesChange, label = { Text("Additional Notes (Optional)") }, modifier = Modifier.fillMaxWidth().height(80.dp), colors = colors
+                value = notes, onValueChange = onNotesChange, label = { Text("Additional Notes (Optional)") }, modifier = Modifier.fillMaxWidth().height(100.dp), colors = colors,
+                leadingIcon = { Icon(Icons.Outlined.Notes, contentDescription = null, tint = NeonCyan) }
             )
         }
     }
@@ -398,19 +472,19 @@ fun NonSaleForm(
             "Photo Note" to Icons.Outlined.CameraAlt,
             "Learning Note" to Icons.Outlined.LightbulbCircle
         )
-        LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.height(260.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.height(360.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             items(categories) { (cat, icon) ->
                 Card(
                     onClick = { onCategoryChange(cat) },
-                    modifier = Modifier.height(60.dp),
+                    modifier = Modifier.height(72.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = onBg.copy(alpha=0.05f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, onBg.copy(alpha = 0.1f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, onBg.copy(alpha = 0.15f))
                 ) {
-                    Row(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Icon(icon, contentDescription = null, tint = ElectricMagenta, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(cat, color = onBg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(icon, contentDescription = null, tint = ElectricMagenta, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(cat, color = onBg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                 }
             }
@@ -433,14 +507,57 @@ fun NonSaleForm(
 
             var dropdownExpanded by remember { mutableStateOf(false) }
 
+            var productSearchText by remember { mutableStateOf(products.find { it.id == productId }?.name ?: "") }
+            
+            LaunchedEffect(productId) {
+                if (!dropdownExpanded) {
+                    productSearchText = products.find { it.id == productId }?.name ?: ""
+                }
+            }
+
+            val filteredProducts = remember(productSearchText, products) {
+                if (productSearchText.isBlank()) products else products.filter { it.name.contains(productSearchText, ignoreCase = true) }
+            }
+
             // Dynamic Fields based on category
             if (category == "Customer Interest" || category == "Customer Question" || category == "Lost Opportunity" || category == "Product Availability") {
                 ExposedDropdownMenuBox(expanded = dropdownExpanded, onExpandedChange = { dropdownExpanded = it }) {
                     OutlinedTextField(
-                        value = products.find { it.id == productId }?.name ?: "", onValueChange = {}, readOnly = true, label = { Text(if(category=="Customer Question") "Product (Optional)" else "Product Selection") }, modifier = Modifier.fillMaxWidth().menuAnchor(), colors = colors, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) }
+                        value = productSearchText,
+                        onValueChange = { 
+                            productSearchText = it
+                            if (!dropdownExpanded) dropdownExpanded = true
+                        },
+                        label = { Text(if(category=="Customer Question") "Product Search (Optional)" else "Product Search") },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(), 
+                        colors = colors, 
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                        singleLine = true
                     )
-                    ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
-                        products.forEach { prod -> DropdownMenuItem(text = { Text(prod.name) }, onClick = { onProductChange(prod.id); dropdownExpanded = false }) }
+                    if (dropdownExpanded) {
+                        ExposedDropdownMenu(
+                            expanded = dropdownExpanded, 
+                            onDismissRequest = { 
+                                dropdownExpanded = false
+                                productSearchText = products.find { it.id == productId }?.name ?: ""
+                            }
+                        ) {
+                            if (filteredProducts.isEmpty()) {
+                                DropdownMenuItem(text = { Text("No products found", color = onBg.copy(alpha=0.5f)) }, onClick = { })
+                            } else {
+                                filteredProducts.forEach { prod -> 
+                                    val formattedPrice = java.text.NumberFormat.getIntegerInstance(java.util.Locale("id", "ID")).format(prod.normalPrice)
+                                    DropdownMenuItem(
+                                        text = { Text("${prod.name} - Rp $formattedPrice") }, 
+                                        onClick = { 
+                                            onProductChange(prod.id)
+                                            productSearchText = prod.name
+                                            dropdownExpanded = false
+                                        }
+                                    ) 
+                                }
+                            }
+                        }
                     }
                 }
             }

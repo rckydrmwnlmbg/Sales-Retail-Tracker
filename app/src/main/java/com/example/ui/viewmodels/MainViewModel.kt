@@ -29,13 +29,6 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
     val allGoals: StateFlow<List<GoalEntity>> = repository.allGoals
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private val _themeMode = MutableStateFlow(0) // 0: System, 1: Dark, 2: Light
-    val themeMode: StateFlow<Int> = _themeMode.asStateFlow()
-
-    fun setThemeMode(mode: Int) {
-        _themeMode.value = mode
-    }
-
     private val _isClockedIn = MutableStateFlow(false)
     val isClockedIn: StateFlow<Boolean> = _isClockedIn.asStateFlow()
 
@@ -95,9 +88,10 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
     private val _firstClockInTime = MutableStateFlow<String?>(prefs.getString("FIRST_CLOCK_IN", "Belum ada"))
     val firstClockInTime: StateFlow<String?> = _firstClockInTime.asStateFlow()
 
-    fun clockIn() {
+    fun clockIn(shiftName: String = "", shiftTime: String = "") {
         _isClockedIn.value = true
-        _clockInHour.value = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        _clockInHour.value = currentHour
         if (_firstClockInTime.value == "Belum ada") {
             try {
                 val formatter = SimpleDateFormat("dd MMMM yyyy", java.util.Locale("id", "ID"))
@@ -108,11 +102,31 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
                 // Ignore
             }
         }
+        
+        // Save to DB
+        viewModelScope.launch {
+            repository.insertActivity(
+                ActivityEntity(
+                    type = "CLOCK_IN",
+                    notes = if (shiftName.isNotEmpty()) "$shiftName ($shiftTime)" else "Clock In - Hour $currentHour"
+                )
+            )
+        }
     }
 
     fun clockOut() {
         _isClockedIn.value = false
         _clockInHour.value = null
+        
+        // Save to DB
+        viewModelScope.launch {
+            repository.insertActivity(
+                ActivityEntity(
+                    type = "CLOCK_OUT",
+                    notes = "Clock Out"
+                )
+            )
+        }
     }
 
     private val currentMonthYear = SimpleDateFormat("yyyy-MM", java.util.Locale.getDefault()).format(Date())
@@ -122,7 +136,7 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
 
     // Derived states for Home Screen
     val personalRevenue: StateFlow<Double> = allActivities.map { activities ->
-        activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.price ?: 0.0 }
+        activities.filter { it.type == "SALE" && it.creditedToId == null }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
     val todayPersonalRevenue: StateFlow<Double> = allActivities.map { activities ->
@@ -135,7 +149,7 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
         
         activities.filter { 
             it.type == "SALE" && it.creditedToId == null && it.timestamp >= startOfDay 
-        }.sumOf { it.price ?: 0.0 }
+        }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
     val personalTransactions: StateFlow<Int> = allActivities.map { activities ->
@@ -148,7 +162,7 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0f)
     
     val storeRevenue: StateFlow<Double> = allActivities.map { activities ->
-        activities.filter { it.type == "SALE" }.sumOf { it.price ?: 0.0 }
+        activities.filter { it.type == "SALE" }.sumOf { it.finalPrice ?: it.price ?: 0.0 }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
     
     val storeTargetProgress: StateFlow<Float> = combine(storeRevenue, currentGoal) { rev, goal ->
@@ -170,8 +184,13 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
         }
     }
 
-    fun addOrUpdateProduct(product: ProductEntity) {
+    fun addOrUpdateProduct(product: ProductEntity, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
+            val existing = allProducts.value.find { it.code == product.code && it.id != product.id }
+            if (existing != null) {
+                onError("Produk sudah ada (kode: ${product.code})")
+                return@launch
+            }
             repository.insertProduct(product)
         }
     }
@@ -179,6 +198,17 @@ class MainViewModel(private val repository: AppRepository, private val prefs: Sh
     fun deleteProduct(product: ProductEntity) {
         viewModelScope.launch {
             repository.insertProduct(product.copy(isActive = !product.isActive))
+        }
+    }
+    
+    fun restoreDataFromCloud(supabaseUrl: String, supabaseKey: String, onComplete: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                com.example.logic.SupabaseSyncHelper.restoreDataFromCloud(supabaseUrl, supabaseKey, repository)
+                onComplete(true, null)
+            } catch (e: Exception) {
+                onComplete(false, e.message)
+            }
         }
     }
 

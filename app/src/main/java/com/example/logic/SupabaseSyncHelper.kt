@@ -27,6 +27,7 @@ object SupabaseSyncHelper {
         
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     private val gson: Gson = GsonBuilder()
+        .serializeNulls()
         .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
         .create()
 
@@ -137,6 +138,79 @@ object SupabaseSyncHelper {
         if (!response.isSuccessful) {
             val responseBody = response.body?.string() ?: ""
             throw Exception("Failed with code ${response.code}: $responseBody")
+        }
+    }
+
+    private fun executeGet(url: String, apiKey: String): String {
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("apikey", apiKey)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .get()
+            .build()
+            
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) {
+            val responseBody = response.body?.string() ?: ""
+            throw Exception("Failed with code ${response.code}: $responseBody")
+        }
+        return response.body?.string() ?: "[]"
+    }
+    
+    suspend fun restoreDataFromCloud(
+        supabaseUrl: String, 
+        supabaseKey: String,
+        repository: com.example.data.repository.AppRepository
+    ) = withContext(Dispatchers.IO) {
+        if (supabaseUrl.isEmpty() || supabaseKey.isEmpty()) {
+            throw Exception("Supabase URL atau Key kosong. Silakan isi di menu Profil.")
+        }
+        
+        val errors = mutableListOf<String>()
+        try {
+            // Restore Products
+            try {
+                val pJson = executeGet(buildEndpoint(supabaseUrl, "/products?select=*"), supabaseKey)
+                val products = gson.fromJson(pJson, Array<ProductEntity>::class.java).toList()
+                repository.insertProducts(products)
+            } catch (e: Exception) {
+                errors.add("Products: ${e.message}")
+            }
+
+            // Restore Activities
+            try {
+                val aJson = executeGet(buildEndpoint(supabaseUrl, "/activities?select=*"), supabaseKey)
+                val activities = gson.fromJson(aJson, Array<ActivityEntity>::class.java).toList()
+                repository.insertActivities(activities)
+            } catch (e: Exception) {
+                errors.add("Activities: ${e.message}")
+            }
+            
+            // Restore Goals
+            try {
+                val gJson = executeGet(buildEndpoint(supabaseUrl, "/goals?select=*"), supabaseKey)
+                val goals = gson.fromJson(gJson, Array<GoalEntity>::class.java).toList()
+                repository.insertGoals(goals)
+            } catch (e: Exception) {
+                errors.add("Goals: ${e.message}")
+            }
+            
+            // Restore Colleagues
+            try {
+                val cJson = executeGet(buildEndpoint(supabaseUrl, "/colleagues?select=*"), supabaseKey)
+                val colleagues = gson.fromJson(cJson, Array<ColleagueEntity>::class.java).toList()
+                repository.insertColleagues(colleagues)
+            } catch (e: Exception) {
+                errors.add("Colleagues: ${e.message}")
+            }
+            
+            Log.d(TAG, "Restore from Supabase finished. Errors: $errors")
+            if (errors.isNotEmpty()) {
+                throw Exception(errors.joinToString(" | "))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error restoring from Supabase: ${e.message}")
+            throw e
         }
     }
 }
